@@ -30,7 +30,6 @@ export class UserController {
   async saveUser(@Body() body): Promise<string> {
     console.log("request recieved");
     // validateToken(user.userId, user.token);
-    // await this.userService.saveUser({ /* id: this.generateUserId(), */ ...user});
 
     if(await this.userService.findOne(body.id)){
       return Object.assign({

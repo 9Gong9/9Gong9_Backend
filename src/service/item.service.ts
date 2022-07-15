@@ -3,14 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../domain/User';
 import { Connection, Repository } from 'typeorm/index';
 import { Item } from '../domain/Item';
+import { Group } from 'src/domain/Group';
+
 @Injectable()
 export class ItemService {
   constructor(
     @InjectRepository(Item) private itemRepository: Repository<Item>,
+    @InjectRepository(Group) private groupRepository: Repository<Group>,
     // private connection: Connection
   ) {
     // this.connection = connection;
     this.itemRepository = itemRepository;
+    this.groupRepository = groupRepository;
   }
   /**
    * User 리스트 조회
@@ -28,6 +32,7 @@ export class ItemService {
     } });
   }
 
+  //  메인 탭에서 지역을 설정하였을 때 지역에 해당하는 상품들 리스트
   async findWithRegionCondition(state, area, town){
     return await this.itemRepository.find(
       {
@@ -38,6 +43,39 @@ export class ItemService {
         }
       }
     )
+  }
+
+  //  특정 지역에서 아직 현재진행형인 상품들 리스트
+  async findWithRegionOngoingCondition(state : string, area : string, town : string){
+    const nowDate = new Date();
+    return await this.itemRepository
+    .createQueryBuilder("item")
+    .where("item.dueDate > :Date", {date:nowDate})
+    .andWhere("item.state = :state", {state:state})
+    .andWhere("item.area = :area", {area:area})
+    .andWhere("item.town = :town", {town:town})
+    .getMany();
+  }
+
+  //  내가 좋아요를 누른 상품들 리스트
+  async findWithLikeCondition(user): Promise<Item[]>{
+    const usersNowGroup = await this.groupRepository.find({
+        loadRelationIds: {
+          relations: [
+            'user',
+            'item'
+          ],
+          disableMixedMap: true
+        },
+        where: {
+          user: user
+        }
+    })
+    const nowDate = new Date();
+    return await this.itemRepository
+    .createQueryBuilder("item")
+    .where("item.dueDate > :Date", {date:nowDate})
+    .getMany();
   }
   /**
    * 유저 저장
@@ -52,6 +90,7 @@ export class ItemService {
   async deleteItem(id: number): Promise<void> {
     await this.itemRepository.delete({ id: id });
   }
+
 
 }
 

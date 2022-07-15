@@ -2,14 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../domain/User';
 import { Connection, Repository } from 'typeorm/index';
+import { Group } from 'src/domain/Group';
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
+    @InjectRepository(Group) private groupRepository: Repository<Group>,
     // private connection: Connection
   ) {
     // this.connection = connection;
     this.userRepository = userRepository;
+    this.groupRepository = groupRepository;
   }
   /**
    * User 리스트 조회
