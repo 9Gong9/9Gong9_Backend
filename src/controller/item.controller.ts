@@ -94,9 +94,27 @@ export class ItemController {
   async findOneItem(@Param('itemId') itemId: number): Promise<Item> {
     console.log('get item with id : '+ itemId);
     const item = await this.itemService.findOne(itemId);
+    const date = item.dueDate;
+    const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
     console.log(item);
     return Object.assign({
-      data: item,
+      data: {
+        id:item.id,
+        name:item.name,
+        rate:item.rate,
+        orgPrice:item.orgPrice,
+        salePrice:item.salePrice,
+        minMan:item.minMan,
+        nowMan:item.nowMan,
+        dueDate:newDueDate,
+        imgUrl:item.imgUrl,
+        category:item.category,
+        state:item.state,
+        area:item.area,
+        town:item.town,
+        likes:item.likes,
+        joiners:item.joiners
+      },
       statusCode: 200,
       statusMsg: `상품 조회가 성공적으로 완료되었습니다.`,
     });
@@ -118,6 +136,28 @@ export class ItemController {
   async findOne(@Param() param, @Body() body): Promise<Item[]> {
     const {state, area, town} = param;
     const foundItemList = await this.itemService.findWithRegionCondition(state, area, town);
+    const resultItemList = foundItemList.map((e)=>{
+      const date = e.dueDate;
+      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+      return {
+        id:e.id,
+        name:e.name,
+        rate:e.rate,
+        orgPrice:e.orgPrice,
+        salePrice:e.salePrice,
+        minMan:e.minMan,
+        nowMan:e.nowMan,
+        dueDate:newDueDate,
+        imgUrl:e.imgUrl,
+        category:e.category,
+        state:e.state,
+        area:e.area,
+        town:e.town,
+        likes:e.likes,
+        joiners:e.joiners
+      }
+
+    })
     console.log(state, area, town);
     if(!foundItemList){
       return Object.assign({
@@ -126,7 +166,7 @@ export class ItemController {
         statusMsg: '해당 지역에 상품이 없습니다.',
       });
     }
-    let foundNameList : string[];
+    let foundNameList : string[] = [];
     foundItemList.forEach(element => {
       foundNameList.push(element.name);
     });
@@ -134,7 +174,7 @@ export class ItemController {
     return Object.assign({
       data: {
         foundNameList,
-        foundItemList
+        resultItemList
       },
       statusCode: 200,
       statusMsg: `상품 조회가 완료되었습니다.`,
@@ -152,8 +192,30 @@ export class ItemController {
         returnData.push(candidateItem);
       }
     }
+    const resultItemList = returnData.map((e)=>{
+      const date = e.dueDate;
+      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+      return {
+        id:e.id,
+        name:e.name,
+        rate:e.rate,
+        orgPrice:e.orgPrice,
+        salePrice:e.salePrice,
+        minMan:e.minMan,
+        nowMan:e.nowMan,
+        dueDate:newDueDate,
+        imgUrl:e.imgUrl,
+        category:e.category,
+        state:e.state,
+        area:e.area,
+        town:e.town,
+        likes:e.likes,
+        joiners:e.joiners
+      }
+
+    })
     return Object.assign({
-      data: { usersOngoingItems:returnData },
+      data: { usersOngoingItems:resultItemList },
       statusCode: 201,
       statusMsg: `유저의 관심 목록이 성공적으로 조회되었습니다.`,
     });
@@ -176,8 +238,30 @@ export class ItemController {
         returnData.push(candidateItem);
       }
     }
+    const resultItemList = returnData.map((e)=>{
+      const date = e.dueDate;
+      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+      return {
+        id:e.id,
+        name:e.name,
+        rate:e.rate,
+        orgPrice:e.orgPrice,
+        salePrice:e.salePrice,
+        minMan:e.minMan,
+        nowMan:e.nowMan,
+        dueDate:newDueDate,
+        imgUrl:e.imgUrl,
+        category:e.category,
+        state:e.state,
+        area:e.area,
+        town:e.town,
+        likes:e.likes,
+        joiners:e.joiners
+      }
+
+    })
     return Object.assign({
-      data: returnData,
+      data: resultItemList,
       statusCode: 201,
       statusMsg: `유저의 과거참여 목록이 성공적으로 조회되었습니다.`,
     });
@@ -194,8 +278,30 @@ export class ItemController {
         returnData.push(candidateItem);
       }
     }
+    const resultItemList = returnData.map((e)=>{
+      const date = e.dueDate;
+      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+      return {
+        id:e.id,
+        name:e.name,
+        rate:e.rate,
+        orgPrice:e.orgPrice,
+        salePrice:e.salePrice,
+        minMan:e.minMan,
+        nowMan:e.nowMan,
+        dueDate:newDueDate,
+        imgUrl:e.imgUrl,
+        category:e.category,
+        state:e.state,
+        area:e.area,
+        town:e.town,
+        likes:e.likes,
+        joiners:e.joiners
+      }
+
+    })
     return Object.assign({
-      data: { usersLikedItem:returnData },
+      data: { usersLikedItem:resultItemList },
       statusCode: 201,
       statusMsg: `유저의 참여 목록이 성공적으로 조회되었습니다.`,
     });
@@ -231,6 +337,7 @@ export class ItemController {
     const userId = param.userId;
     const itemId = param.itemId;
     let toggleItem;
+    let toggleUser;
     let nowJoined :boolean;
     const ifAlreadyJoined = await this.joinerService.findWithUserItemCondition(userId, itemId);
     if(ifAlreadyJoined == null){
@@ -243,14 +350,20 @@ export class ItemController {
       await this.joinerService.saveJoiner(newJoin);
       console.log(await this.joinerService.findWithUserItemCondition(userId, itemId));
       toggleItem = await this.itemService.findOne(itemId);
+      toggleUser = await this.userService.findOne(userId);
       toggleItem.nowMan += 1;
+      toggleUser.budget -= toggleItem.salePrice;
       await this.itemService.saveItem(toggleItem);
+      await this.userService.saveUser(toggleUser);
     }else{
       await this.joinerService.deleteJoiner(ifAlreadyJoined.id);
       toggleItem = await this.itemService.findOne(itemId);
+      toggleUser = await this.userService.findOne(userId);
       nowJoined = false;
       toggleItem.nowMan -= 1;
+      toggleUser.budget += toggleItem.salePrice;
       await this.itemService.saveItem(toggleItem);
+      await this.userService.saveUser(toggleUser);
     }
     // await this.itemService.saveItem(toggleItem);
     return Object.assign({

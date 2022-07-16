@@ -36,7 +36,7 @@ export class UserController {
         data: { /* id: this.userKey,  */
           ...body },
         statusCode: 401,
-        statusMsg: `이미 있는 회원입니다!`,
+        statusMsg: `이미 있는 ID입니다!`,
       });
     }
 
@@ -75,7 +75,7 @@ export class UserController {
           data: { /* id: this.userKey,  */
             ...nkUser },
           statusCode: 201,
-          statusMsg: `카카오 회원가입 및 로그인 성공`,
+          statusMsg: `신규 카카오 회원 등록 및 로그인 성공`,
         });
       }else{
         kUser.isActive = true;
@@ -207,10 +207,24 @@ export class UserController {
     }
     return Object.assign({
       data: regionData,
-      statusCode: 200,
-      statusMsg: `유저의 기본 지역정보가 성공적으로 완료되었습니다.`,
+      statusCode: 204,
+      statusMsg: `유저의 기본 지역정보가 성공적으로 갱신되었습니다.`,
     });
+  }
 
+  @Put(':userId/budget')
+  async updateBudget(@Param('userId') userId:string, @Body() body):Promise<void>{
+    const user = await this.userService.findOne(userId);
+    user.budget = body.newValue;
+    await this.userService.saveUser(user);
+    
+    return Object.assign({
+      data: {
+        user
+      },
+      statusCode: 204,
+      statusMsg: `유저의 자산 정보가 성공적으로 갱신되었습니다.`,
+    });
   }
 }
 
