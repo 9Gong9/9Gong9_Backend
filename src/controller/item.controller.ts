@@ -236,6 +236,13 @@ export class ItemController {
 
   @Get('/list/:userId/likes') //  유저가 관심있는 목록을 조회
   async findLikedItems(@Param('userId') userId: string):Promise<Item[]>{
+    if(await this.userService.findOne(userId) == null){
+      return Object.assign({
+        data:userId,
+        statusCode: 40,
+        statusMsg: '해당 ID의 회원은 존재하지 않습니다.'
+      })
+    }
     const usersLikedGroup = await this.joinerService.findWithUserCondition(userId);
     const returnData = [];
     const nowDate = new Date();
