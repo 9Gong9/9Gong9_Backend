@@ -59,6 +59,8 @@ export class UserController {
   
   @Put()// 로그인작업
   async loginUser(@Body() body): Promise<string> {
+    console.log("login request arrived");
+    console.log(body);
     // validateToken(user.userId, user.token);
     // await this.userService.saveUser({ /* id: this.generateUserId(), */ ...user});
     if(body.isKakaoLogin == "true"){  //nestJs 특성상 body.isKakaoLogin 의 true/false 여부가 꼬일 수 있다. 조심!!!!
@@ -109,12 +111,15 @@ export class UserController {
       user.isActive = true;
   
       await this.userService.saveUser(user);
-      return Object.assign({
+      const response =  Object.assign({
         data: { /* id: this.userKey,  */
           ...user },
         statusCode: 201,
         statusMsg: `로그인 성공`,
       });
+      console.log("response is...");
+      console.log(response);
+      return response;
     }
    
   }
@@ -122,6 +127,9 @@ export class UserController {
 
   @Put(':userId/logout')  // 로그아웃
   async logout(@Param('userId') userId: string, @Body() body): Promise<string>{
+    console.log("logout request arrived");
+    console.log(userId);
+    console.log(body);
     const user = await this.userService.findOne(userId);
     if(!user){ return Object.assign({
       data: {
@@ -134,13 +142,17 @@ export class UserController {
     user.isActive = false;
     await this.userService.saveUser(user);
 
-    return Object.assign({
+    
+    const response = Object.assign({
       data: {
         id : userId,
       },
       statusCode: 204,
       statusMsg: '로그아웃이 성공적으로 완료되었습니다.',
     })
+    console.log("response is...");
+    console.log(response);
+    return response;
   }
 
   @Get(':userId') //회원정보 조회

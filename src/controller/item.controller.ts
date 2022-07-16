@@ -23,15 +23,13 @@ export class ItemController {
     this.likeService = likeService;
   } 
 
-  public RegionData = {};
-
   @Get('regionList')  //  대전광역시의 시군구 정보를 불러온다. 런칭된 앱에서는 쓸 일 없음
   async returnRegionList():Promise<void>{
-    this.RegionData = getRegionData();
+    const regionData = getRegionData();
     return Object.assign({
-      data: this.RegionData,
+      data: regionData,
       statusCode:200,
-      statusMsg: '200 OK'
+      statusMsg: '동네 정보가 성공적으로 조회되었습니다.'
     });
   }
 
@@ -89,37 +87,6 @@ export class ItemController {
     })
   }
 
-
-  @Get(':itemId')  ////  특정 ID의 아이템 세부정보 로딩
-  async findOneItem(@Param('itemId') itemId: number): Promise<Item> {
-    console.log('get item with id : '+ itemId);
-    const item = await this.itemService.findOne(itemId);
-    const date = item.dueDate;
-    const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
-    console.log(item);
-    return Object.assign({
-      data: {
-        id:item.id,
-        name:item.name,
-        rate:item.rate,
-        orgPrice:item.orgPrice,
-        salePrice:item.salePrice,
-        minMan:item.minMan,
-        nowMan:item.nowMan,
-        dueDate:newDueDate,
-        imgUrl:item.imgUrl,
-        category:item.category,
-        state:item.state,
-        area:item.area,
-        town:item.town,
-        likes:item.likes,
-        joiners:item.joiners
-      },
-      statusCode: 200,
-      statusMsg: `상품 조회가 성공적으로 완료되었습니다.`,
-    });
-  }
-
   @Get('list')  ////  지역고려X 모든 상품 내역을 불러온다. 런칭된 앱에서는 쓸 일 없음
   async findAll(): Promise<Item[]> {
     console.log('get item list');
@@ -132,13 +99,13 @@ export class ItemController {
     });
   }
 
-  @Get('/list/:state/:area/:town')  //  선택된 지역의 모든 상품 조회, 상품명 리스트와 함께 반환
+  @Get('list/:state/:area/:town')  //  선택된 지역의 모든 상품 조회, 상품명 리스트와 함께 반환
   async findOne(@Param() param, @Body() body): Promise<Item[]> {
     const {state, area, town} = param;
     const foundItemList = await this.itemService.findWithRegionCondition(state, area, town);
     const resultItemList = foundItemList.map((e)=>{
       const date = e.dueDate;
-      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
       return {
         id:e.id,
         name:e.name,
@@ -194,7 +161,7 @@ export class ItemController {
     }
     const resultItemList = returnData.map((e)=>{
       const date = e.dueDate;
-      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
       return {
         id:e.id,
         name:e.name,
@@ -240,7 +207,7 @@ export class ItemController {
     }
     const resultItemList = returnData.map((e)=>{
       const date = e.dueDate;
-      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
       return {
         id:e.id,
         name:e.name,
@@ -280,7 +247,7 @@ export class ItemController {
     }
     const resultItemList = returnData.map((e)=>{
       const date = e.dueDate;
-      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
       return {
         id:e.id,
         name:e.name,
@@ -304,6 +271,36 @@ export class ItemController {
       data: { usersLikedItem:resultItemList },
       statusCode: 201,
       statusMsg: `유저의 참여 목록이 성공적으로 조회되었습니다.`,
+    });
+  }
+  
+  @Get(':itemId')  ////  특정 ID의 아이템 세부정보 로딩
+  async findOneItem(@Param('itemId') itemId: number): Promise<Item> {
+    console.log('get item with id : '+ itemId);
+    const item = await this.itemService.findOne(itemId);
+    const date = item.dueDate;
+    const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    console.log(item);
+    return Object.assign({
+      data: {
+        id:item.id,
+        name:item.name,
+        rate:item.rate,
+        orgPrice:item.orgPrice,
+        salePrice:item.salePrice,
+        minMan:item.minMan,
+        nowMan:item.nowMan,
+        dueDate:newDueDate,
+        imgUrl:item.imgUrl,
+        category:item.category,
+        state:item.state,
+        area:item.area,
+        town:item.town,
+        likes:item.likes,
+        joiners:item.joiners
+      },
+      statusCode: 200,
+      statusMsg: `상품 조회가 성공적으로 완료되었습니다.`,
     });
   }
 
