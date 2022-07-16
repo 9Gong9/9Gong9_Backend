@@ -45,6 +45,20 @@ export class ItemService {
     )
   }
 
+  //  2번째 탭에서 카테고리를 설정했을 때, 지역조건 & 카테고리 조건으로 검색
+  async findWithRegionCategoryCondition(state, area, town, category){
+    return await this.itemRepository.find(
+      {
+        where: {
+          state: state,
+          area :area,
+          town : town,
+          category: category
+        }
+      }
+    )
+  }
+
   //  특정 지역에서 아직 현재진행형인 상품들 리스트
   async findWithRegionOngoingCondition(state : string, area : string, town : string){
     const nowDate = new Date();

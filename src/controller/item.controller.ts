@@ -148,6 +148,56 @@ export class ItemController {
     });
   }
 
+  @Get('list/:state/:area/:town/:category')  //  선택된 지역의 모든 상품 조회, 상품명 리스트와 함께 반환
+  async findWithRegionCategory(@Param() param, @Body() body): Promise<Item[]> {
+    const {state, area, town, category} = param;
+    const foundItemList = await this.itemService.findWithRegionCategoryCondition(state, area, town, category);
+    const resultItemList = foundItemList.map((e)=>{
+      const date = e.dueDate;
+      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+      return {
+        id:e.id,
+        name:e.name,
+        rate:e.rate,
+        orgPrice:e.orgPrice,
+        salePrice:e.salePrice,
+        minMan:e.minMan,
+        nowMan:e.nowMan,
+        dueDate:newDueDate,
+        imgUrl:e.imgUrl,
+        category:e.category,
+        state:e.state,
+        area:e.area,
+        town:e.town,
+        likes:e.likes,
+        joiners:e.joiners
+      }
+
+    })
+    console.log(state, area, town, category);
+    if(!foundItemList){
+      return Object.assign({
+        data: foundItemList,
+        statusCode: 400,
+        statusMsg: '해당 지역에 상품이 없습니다.',
+      });
+    }
+
+    //  검색어자동완성 기능을 위한 NAME LIST 동봉 반환
+    let foundNameList : string[] = [];
+    foundItemList.forEach(element => {
+      foundNameList.push(element.name);
+    });
+    return Object.assign({
+      data: {
+        foundNameList,
+        resultItemList
+      },
+      statusCode: 200,
+      statusMsg: `상품 조회가 완료되었습니다.`,
+    });
+  }
+
   @Get('/list/:userId/ongoing') //  현재 유저가 참여중인 ongoing 상품을 조회
   async findUsersOngoingItems(@Param('userId') userId: string):Promise<Item[]>{
     const usersOngoingGroup = await this.joinerService.findWithUserCondition(userId);
