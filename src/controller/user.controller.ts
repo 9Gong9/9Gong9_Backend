@@ -15,7 +15,7 @@ export class UserController {
   // }
 
 
-  @Get('list')
+  @Get('list')  //  모든 유저의 목록 조회
   async findAll(): Promise<User[]> {
     const userList = await this.userService.findAll();
     console.log(userList);
@@ -26,7 +26,7 @@ export class UserController {
     });
   }
 
-  @Post()
+  @Post() //  유저 회원가입
   async saveUser(@Body() body): Promise<string> {
     console.log("request recieved");
     // validateToken(user.userId, user.token);
@@ -89,7 +89,7 @@ export class UserController {
   }
 
 
-  @Put(':userId/logout')
+  @Put(':userId/logout')  // 로그아웃
   async logout(@Param('userId') userId: string, @Body() body): Promise<string>{
     const user = await this.userService.findOne(userId);
     if(!user){ return Object.assign({
@@ -112,7 +112,7 @@ export class UserController {
     })
   }
 
-  @Get(':userId')
+  @Get(':userId') //회원정보 조회
   async findOne(@Param('userId') id: string, @Body() body): Promise<User> {
     const foundUser = await this.userService.findOne(id);
     if(foundUser){
@@ -131,7 +131,7 @@ export class UserController {
 
   
 
-  @Delete(':userId')
+  @Delete(':userId')  //회원 탈퇴
   async deleteUser(@Param('userId') id: string, @Body() body): Promise<string> {
 
     const deleteuser = await this.userService.findOne(id);    

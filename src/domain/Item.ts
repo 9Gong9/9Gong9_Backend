@@ -27,6 +27,8 @@ export class Item extends BaseEntity{
   @Column({ nullable:true })
   imgUrl: string;
   @Column({ nullable:true })
+  category: string;
+  @Column({ nullable:true })
   state: string;
   @Column({ nullable:true })
   area: string;

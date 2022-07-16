@@ -10,11 +10,12 @@ import { Like } from './domain/map/Like';
 import { UserBuyRecord } from './domain/map/UserBuyRecord';
 import { Group } from './domain/Group';
 import { GroupService } from './service/group.service';
+import { LikeService } from './service/like.service';
 // import { SpendController } from './controller/spend.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, Item, Like, UserBuyRecord, Group])],
   controllers: [UserController, ItemController],
-  providers: [UserService, ItemService, GroupService],
+  providers: [UserService, ItemService, GroupService, LikeService],
 })
 export class ManageModule {}

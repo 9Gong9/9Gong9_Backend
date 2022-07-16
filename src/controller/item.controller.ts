@@ -9,6 +9,7 @@ import { GroupService } from 'src/service/group.service';
 import { LikeService } from 'src/service/like.service';
 import { Like } from 'src/domain/map/Like';
 import { Group } from 'src/domain/Group';
+import { getItemData, getRegionData } from 'src/datareturn';
 @Controller('item')
 export class ItemController {
   constructor(
@@ -21,55 +22,91 @@ export class ItemController {
     this.itemService = itemService;
     this.groupService = groupService;
     this.likeService = likeService;
-  }
-  
+  } 
 
-  // primaryDataGenerator();
-  async primaryDataGenerator(){
-    for(let i=0;i<10;i++){
-      for(let j=0;j<10;j++){
-        const item = new Item();
-        item.name = `${i} + ${j}`;
-        item.rate = i;
-        item.orgPrice = 1000;
-        item.salePrice = 500;
-        item.state = "대전광역시";
-        item.area = "유성구";
-        item.town = "궁동";
-        await this.itemService.saveItem(item);
+  @Get('regionList')  //  대전광역시의 시군구 정보를 불러온다. 런칭된 앱에서는 쓸 일 없음
+  async returnRegionList():Promise<void>{
+    const data = getRegionData();
+    return Object.assign({
+      data:{
+        data
+      },
+      statusCode:200,
+      statusMsg: '200 OK'
+    });
+  }
+
+  @Get('itemCrawl') //  대전광역시의 시군구 정보를 불러온 뒤, (위의 리퀘스트 추가실행 필요X) 더미 상품을들 '동'단위 별로 '카테고리'별로 25개씩 담는다. 런칭된 앱에서는 쓸 일 없음
+  async itemCrawlFetch():Promise<void>{
+    const regionList = getRegionData();
+    const siteList = [
+      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095739","과일"],
+      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095740","채소"],
+      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095498","쌀/잡곡/견과"],
+      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095499","정육/계란류"],
+      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095500","수산물/건해산"],
+      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095501","우유/유제품/유아식"],
+      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095502","냉장/냉동/간편식"],
+      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095507","생수/음료/주류"],
+      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095503","밀키트/김치/반찬"],
+      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095508","커피/원두/차"],
+      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095504","라면/면류/즉석식품/통조림"],
+      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095509","장류/양념/가루/오일"],
+      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095505","과자/시리얼/빙과/떡"],
+      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095506","베이커리/잼/샐러드"],
+      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095510","건강식품"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095511","친환경/유기농"],
+    ];
+    siteList.forEach(async (e)=>{
+      const url = e[0];
+      const category = e[1];
+      const data = await getItemData(url);
+      for(let state in regionList){
+        for(let area in regionList[state]){
+          for(let town in regionList[state][area]){
+            data.forEach(async (e)=>{
+              const item: Item = new Item();
+              const nowDate = new Date();
+              item.name = e.name;
+              item.rate = e.rate;
+              item.orgPrice = e.orgPrice;
+              item.salePrice = e.salePrice;
+              item.minMan = Math.floor(Math.random()*10);
+              item.nowMan = 0;
+              nowDate.setDate(nowDate.getDate() + Math.floor(Math.random()*10));
+              item.dueDate = nowDate;
+              item.imgUrl = e.imgUrl;
+              item.category = category;
+              item.state = state;
+              item.area = area;
+              item.town = regionList[state][area][town];
+              await this.itemService.saveItem(item);
+            })
+          }
+        }
       }
-    }
+
+      console.log("Done!");
+      await setTimeout(()=>{return}, 10000);
+
+
+    })
   }
 
-  states = [
-    '대전광역시','대구광역시','서울턱별시','광주광역시','Busan','Ulsan','Incheon','Suwon','Jeju','Dokdo'
-  ]
-  areas = [
-    '도봉구','영통구','유성구','area4','area5','area6', '가라충!'
-  ]
-  towns=[
-    '신성동','장동','강호동','town4','town5','town6'
-  ]
-  @Get('primaryAction')
-  async primaryAction(){
-    for(let i=0;i<this.states.length;i++){
-      for(let j=0;j<this.areas.length;j++){
-        for(let k=0;k<this.towns.length;k++){
-          const item = new Item();
-          item.name = `${i} + ${j} + ${k}`;
-          item.rate = i;
-          item.orgPrice = 1000;
-          item.salePrice = 500;
-          item.state = this.states[i];
-          item.area = this.areas[j];
-          item.town = this.towns[k];
-          await this.itemService.saveItem(item);
-        }
-        }
-    }
+
+  @Get(':/itemId')  ////  특정 ID의 아이템 세부정보 로딩
+  async findOneItem(@Param('itemId') itemId: number): Promise<Item> {
+    console.log('get item with id : '+ itemId);
+    const item = await this.itemService.findOne(itemId);
+    console.log(item);
+    return Object.assign({
+      data: item,
+      statusCode: 200,
+      statusMsg: `상품 조회가 성공적으로 완료되었습니다.`,
+    });
   }
 
-  @Get('list')  //전체상품목록조회
+  @Get('list')  ////  지역고려X 모든 상품 내역을 불러온다. 런칭된 앱에서는 쓸 일 없음
   async findAll(): Promise<Item[]> {
     console.log('get item list');
     const itemList = await this.itemService.findAll();
@@ -81,7 +118,7 @@ export class ItemController {
     });
   }
 
-  @Get('/list/:state/:area/:town')
+  @Get('/list/:state/:area/:town')  //  선택된 지역의 모든 상품 조회, 상품명 리스트와 함께 반환
   async findOne(@Param() param, @Body() body): Promise<Item[]> {
     const {state, area, town} = param;
     const foundItemList = await this.itemService.findWithRegionCondition(state, area, town);
@@ -93,8 +130,16 @@ export class ItemController {
         statusMsg: '해당 지역에 상품이 없습니다.',
       });
     }
+    let foundNameList : string[];
+    foundItemList.forEach(element => {
+      foundNameList.push(element.name);
+    });
+
     return Object.assign({
-      data: foundItemList,
+      data: {
+        foundNameList,
+        foundItemList
+      },
       statusCode: 200,
       statusMsg: `상품 조회가 완료되었습니다.`,
     });
@@ -119,7 +164,7 @@ export class ItemController {
   }
 
   
-  @Get('/list/:userId/previous') //  유저가 참여했던던 상품목록을 조회
+  @Get('/list/:userId/previous') //  유저가 참여했던 상품목록을 조회
   async findUsersPreviousItems(@Param('userId') userId: string):Promise<Item[]>{
     const usersPrevGroup = await this.groupService.findWithUserCondition(userId);
     const returnData = [];
@@ -179,10 +224,11 @@ export class ItemController {
     });
   }
 
-  @Put('/join/:userId/:itemId') //  유저가 상품에 누른 좋아요의 toggle
+  @Put('/join/:userId/:itemId') //  유저의 상품에 대한 참여여부의 toggle
   async toggleUsersJoinItem(@Param() param):Promise<void>{
     const userId = param.userId;
     const itemId = param.itemId;
+    const toggleItem = await this.itemService.findOne(itemId);
     let nowJoined :boolean;
     const ifAlreadyJoined = await this.groupService.findWithUserItemCondition(userId, itemId);
     if(ifAlreadyJoined == null){
@@ -190,38 +236,19 @@ export class ItemController {
       newJoin.user = await this.userService.findOne(userId);
       newJoin.item = await this.itemService.findOne(itemId);
       nowJoined = true;
+      toggleItem.nowMan += 1;
     }else{
       await this.groupService.deleteGroup(ifAlreadyJoined.id);
       nowJoined = false;
+      toggleItem.nowMan -= 1;
     }
+    await this.itemService.saveItem(toggleItem);
     return Object.assign({
       data: { userId,
         itemId,
         nowJoined  },
       statusCode: 201,
       statusMsg: `유저의 참여여부 변경이 성공적으로 반영되었습니다.`,
-    });
-  }
-
-
-
-  @Delete(':userId')
-  async deleteUser(@Param('userId') id: string, @Body() body): Promise<string> {
-
-    const deleteuser = await this.userService.findOne(id);    
-    if(!deleteuser){ 
-      return Object.assign({
-      data: { userId: id },
-      statusCode: 400,
-      statusMsg: `존재하지 않는 회원입니다.`,
-    });
-
-    }
-    const user = await this.userService.deleteUser(id);
-    return Object.assign({
-      data: { userId: id },
-      statusCode: 201,
-      statusMsg: `유저 정보가 성공적으로 삭제되었습니다.`,
     });
   }
 }
