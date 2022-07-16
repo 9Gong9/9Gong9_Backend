@@ -3,7 +3,7 @@ import { Item } from '../Item';
 import { User } from '../User';
 @Entity()
 
-@Unique(['id'])
+@Unique(['user', 'item'])
 export class Like extends BaseEntity{
   @PrimaryGeneratedColumn()
   id: number;

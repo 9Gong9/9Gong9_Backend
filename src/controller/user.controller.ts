@@ -31,7 +31,7 @@ export class UserController {
     console.log("request recieved");
     // validateToken(user.userId, user.token);
 
-    if(await this.userService.findOne(body.id)){
+    if(await this.userService.findOne(body.id)){ 
       return Object.assign({
         data: { /* id: this.userKey,  */
           ...body },
@@ -45,6 +45,8 @@ export class UserController {
     user.name = body.name;
     user.password = body.password;
     user.isActive = false;
+    user.budget = 0;
+    user.iskakao = false;
     await this.userService.saveUser(user);
 
     return Object.assign({
@@ -59,33 +61,62 @@ export class UserController {
   async loginUser(@Body() body): Promise<string> {
     // validateToken(user.userId, user.token);
     // await this.userService.saveUser({ /* id: this.generateUserId(), */ ...user});
-    const user = await this.userService.findOne(body.id);
-    if(!(user)){
+    if(body.isKakaoLogin == "true"){  //nestJs 특성상 body.isKakaoLogin 의 true/false 여부가 꼬일 수 있다. 조심!!!!
+      const kUser = await this.userService.findOne(body.id);
+      if(kUser == null){
+        const nkUser = new User();
+        nkUser.id = body.id;
+        nkUser.name = body.name;
+        nkUser.iskakao = true;
+        nkUser.budget = 0;
+        nkUser.isActive = true;
+        await this.userService.saveUser(nkUser);
+        return Object.assign({
+          data: { /* id: this.userKey,  */
+            ...nkUser },
+          statusCode: 201,
+          statusMsg: `카카오 회원가입 및 로그인 성공`,
+        });
+      }else{
+        kUser.isActive = true;
+        await this.userService.saveUser(kUser);
+        return Object.assign({
+          data: { /* id: this.userKey,  */
+            ...kUser },
+          statusCode: 201,
+          statusMsg: `카카오 로그인 성공`,
+        });
+      }
+    }else{
+      const user = await this.userService.findOne(body.id);
+      if(!(user)){
+        return Object.assign({
+          data: { /* id: this.userKey,  */
+            ...body },
+          statusCode: 401,
+          statusMsg: `존재하지 않는 회원입니다!`,
+        });
+      }
+      if((user.password !== body.password)){
+        return Object.assign({
+          data: { /* id: this.userKey,  */
+            ...body },
+          statusCode: 401,
+          statusMsg: `올바르지 않은 비밀번호입니다!`,
+        });
+      }
+  
+      user.isActive = true;
+  
+      await this.userService.saveUser(user);
       return Object.assign({
         data: { /* id: this.userKey,  */
-          ...body },
-        statusCode: 401,
-        statusMsg: `존재하지 않는 회원입니다!`,
+          ...user },
+        statusCode: 201,
+        statusMsg: `로그인 성공`,
       });
     }
-    if((user.password !== body.password)){
-      return Object.assign({
-        data: { /* id: this.userKey,  */
-          ...body },
-        statusCode: 401,
-        statusMsg: `올바르지 않은 비밀번호입니다!`,
-      });
-    }
-
-    user.isActive = true;
-
-    await this.userService.saveUser(user);
-    return Object.assign({
-      data: { /* id: this.userKey,  */
-        ...user },
-      statusCode: 201,
-      statusMsg: `로그인 성공`,
-    });
+   
   }
 
 
@@ -105,7 +136,7 @@ export class UserController {
 
     return Object.assign({
       data: {
-        userId,
+        id : userId,
       },
       statusCode: 204,
       statusMsg: '로그아웃이 성공적으로 완료되었습니다.',
@@ -149,6 +180,37 @@ export class UserController {
       statusCode: 201,
       statusMsg: `유저 정보가 성공적으로 삭제되었습니다.`,
     });
+  }
+
+  @Put(':userId/defRegion')
+  async setUsersDefaultRegion(@Param('userId') userId:string, @Body() body):Promise<void>{
+    const user = await this.userService.findOne(userId);
+    user.defState = body.state;
+    user.defArea = body.area;
+    user.defTown = body.town;
+  }
+
+  @Get(':userId/defRegion')
+  async getUsersDefaultReginon(@Param('userId') userId:string):Promise<object>{
+    const user = await this.userService.findOne(userId);
+    if(user == null){
+      return Object.assign({
+        data: {userId},
+        statusCode: 400,
+        statusMsg: `조회하고자 하는 유저가 없습니다.`,
+      });
+    }
+    const regionData = {
+      state: user.defState,
+      area: user.defArea,
+      town: user.defTown
+    }
+    return Object.assign({
+      data: regionData,
+      statusCode: 200,
+      statusMsg: `유저의 기본 지역정보가 성공적으로 완료되었습니다.`,
+    });
+
   }
 }
 

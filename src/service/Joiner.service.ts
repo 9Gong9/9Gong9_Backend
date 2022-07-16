@@ -3,38 +3,38 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../domain/User';
 import { Connection, Repository } from 'typeorm/index';
 import { Item } from '../domain/Item';
-import { Group } from 'src/domain/Group';
+import { Joiner } from 'src/domain/Joiner';
 
 @Injectable()
-export class GroupService {
+export class JoinerService {
   constructor(
     @InjectRepository(Item) private itemRepository: Repository<Item>,
-    @InjectRepository(Group) private groupRepository: Repository<Group>,
+    @InjectRepository(Joiner) private joinerRepository: Repository<Joiner>,
     // private connection: Connection
   ) {
     // this.connection = connection;
     this.itemRepository = itemRepository;
-    this.groupRepository = groupRepository;
+    this.joinerRepository = joinerRepository;
   }
   /**
    * User 리스트 조회
    */
-   async findAll(): Promise<Group[]> {
-    return this.groupRepository.find();
+   async findAll(): Promise<Joiner[]> {
+    return this.joinerRepository.find();
   }
   /**
    * 특정 유저 조회
    * @param id
    */
-  async findOne(id: number): Promise<Group> {
-    return this.groupRepository.findOne({ where:{
+  async findOne(id: number): Promise<Joiner> {
+    return this.joinerRepository.findOne({ where:{
       id: id
     } });
   }
 
   //  유저가 속한 그룹들을 가져옴
-  async findWithUserCondition(userId: string): Promise<Group[]> {
-    return await this.groupRepository.find(
+  async findWithUserCondition(userId: string): Promise<Joiner[]> {
+    return await this.joinerRepository.find(
       {
         loadRelationIds: {
           relations: [
@@ -50,8 +50,8 @@ export class GroupService {
     )
   }
   
-  async findWithUserItemCondition(userId: string, itemId: number): Promise<Group>{
-    return await this.groupRepository.findOne(
+  async findWithUserItemCondition(userId: string, itemId: number): Promise<Joiner>{
+    return await this.joinerRepository.findOne(
       {
         loadRelationIds: {
           relations: [
@@ -72,14 +72,23 @@ export class GroupService {
    * 유저 저장
    * @param user
    */
-  async saveGroup(group : Group): Promise<void> {
-    await this.groupRepository.save(group);
+  async saveJoiner(joiner : Joiner): Promise<void> {
+    console.log("WTF@!!!!!");
+    console.log(joiner);
+    await this.joinerRepository.save(joiner);
+    console.log("jsadfjsad;klf;kalsdf;klsadj;fklsadj;lkfja[sdl");
+    console.log(await this.joinerRepository.findOne({
+      where:{
+        id: joiner.id
+      }
+    }));
+    console.log("WHYYYYYY");
   }
   /**
    * 유저 삭제
    */
-  async deleteGroup(id: number): Promise<void> {
-    await this.groupRepository.delete({ id: id });
+  async deleteJoiner(id: number): Promise<void> {
+    await this.joinerRepository.delete({ id: id });
   }
 
 }

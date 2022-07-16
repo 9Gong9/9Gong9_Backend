@@ -1,6 +1,5 @@
 import { BaseEntity, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn, Unique } from 'typeorm/index';
-import { Group } from './Group';
-import { UserBuyRecord } from './map/UserBuyRecord';
+import { Joiner } from './Joiner';
 import { Like } from './map/Like';
 @Entity()
 
@@ -13,6 +12,8 @@ export class User extends BaseEntity{
   password: string;
   @Column({ nullable:true })
   isActive: boolean;
+  @Column({nullable:true})
+  iskakao: boolean;
 
   //  Personal Info
   @Column({nullable:true})
@@ -21,6 +22,12 @@ export class User extends BaseEntity{
   // imgUrl: string;
   @Column({ nullable:true })
   budget: number;
+  @Column({ nullable:true })
+  defState: string;
+  @Column({ nullable:true })
+  defArea: string;
+  @Column({ nullable:true })
+  defTown: string;
 
   //  One To Many References
   @OneToMany(type=>Like, like => like.user, {
@@ -28,14 +35,9 @@ export class User extends BaseEntity{
     eager: true
   })
   likes: Like[];
-  @OneToMany(type=>UserBuyRecord, userBuyRecord => userBuyRecord.user, {
+  @OneToMany(type=>Joiner, joiner => joiner.user, {
     onDelete:'CASCADE',
     eager: true
   })
-  userBuyRecord: UserBuyRecord[];
-  @OneToMany(type=>Group, group => group.user, {
-    onDelete:'CASCADE',
-    eager: true
-  })
-  groups: Group[];
+  joiners: Joiner[];
 }

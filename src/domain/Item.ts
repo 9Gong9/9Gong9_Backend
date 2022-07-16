@@ -1,8 +1,7 @@
 import { group } from 'console';
 import { BaseEntity, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn, Unique } from 'typeorm/index';
 import { Url } from 'url';
-import { Group } from './Group';
-import { UserBuyRecord } from './map/UserBuyRecord';
+import { Joiner } from './Joiner';
 import { Like } from './map/Like';
 @Entity()
 
@@ -41,14 +40,9 @@ export class Item extends BaseEntity{
     eager: true
   })
   likes: Like[];
-  @OneToMany(type=>UserBuyRecord, userBuyRecord => userBuyRecord.item, {
+  @OneToMany(type=>Joiner, joiner => joiner.item, {
     onDelete:'CASCADE',
     eager: true
   })
-  userBuyRecord: UserBuyRecord[];
-  @OneToMany(type=>Group, group => group.item, {
-    onDelete:'CASCADE',
-    eager: true
-  })
-  groups: Group[];
+  joiners: Joiner[];
 }

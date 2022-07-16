@@ -2,17 +2,16 @@ import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryCo
 import { Item } from './Item';
 import { User } from './User';
 @Entity()
-
-@Unique(['id'])
-export class Group extends BaseEntity{
+@Unique(['user', 'item'])
+export class Joiner extends BaseEntity{
   @PrimaryGeneratedColumn()
   id: number;
 
   //   Many To One References
-  @ManyToOne(type => User, user => user.groups)
+  @ManyToOne(type => User, user => user.joiners)
   @JoinColumn({name: 'ref_userId'})
   user: User;
-  @ManyToOne(type => Item, item => item.groups)
+  @ManyToOne(type => Item, item => item.joiners)
   @JoinColumn({name: 'ref_itemId'})
   item: Item;
 }

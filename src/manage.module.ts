@@ -7,15 +7,14 @@ import { Item } from './domain/Item';
 import { ItemService } from './service/item.service';
 import { ItemController } from './controller/item.controller';
 import { Like } from './domain/map/Like';
-import { UserBuyRecord } from './domain/map/UserBuyRecord';
-import { Group } from './domain/Group';
-import { GroupService } from './service/group.service';
+import { Joiner } from './domain/Joiner';
+import { JoinerService } from './service/Joiner.service';
 import { LikeService } from './service/like.service';
 // import { SpendController } from './controller/spend.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Item, Like, UserBuyRecord, Group])],
+  imports: [TypeOrmModule.forFeature([User, Item, Like, Joiner])],
   controllers: [UserController, ItemController],
-  providers: [UserService, ItemService, GroupService, LikeService],
+  providers: [UserService, ItemService, JoinerService, LikeService],
 })
 export class ManageModule {}

@@ -3,18 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../domain/User';
 import { Connection, Repository } from 'typeorm/index';
 import { Item } from '../domain/Item';
-import { Group } from 'src/domain/Group';
+import { Joiner } from 'src/domain/Joiner';
 
 @Injectable()
 export class ItemService {
   constructor(
     @InjectRepository(Item) private itemRepository: Repository<Item>,
-    @InjectRepository(Group) private groupRepository: Repository<Group>,
+    @InjectRepository(Joiner) private joinerRepository: Repository<Joiner>,
     // private connection: Connection
   ) {
     // this.connection = connection;
     this.itemRepository = itemRepository;
-    this.groupRepository = groupRepository;
+    this.joinerRepository = joinerRepository;
   }
   /**
    * User 리스트 조회
@@ -59,7 +59,7 @@ export class ItemService {
 
   //  내가 좋아요를 누른 상품들 리스트
   async findWithLikeCondition(user): Promise<Item[]>{
-    const usersNowGroup = await this.groupRepository.find({
+    const usersNowGroup = await this.joinerRepository.find({
         loadRelationIds: {
           relations: [
             'user',

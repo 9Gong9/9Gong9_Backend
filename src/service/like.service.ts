@@ -3,20 +3,21 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../domain/User';
 import { Connection, Repository } from 'typeorm/index';
 import { Item } from '../domain/Item';
-import { Group } from 'src/domain/Group';
+import { Joiner } from 'src/domain/Joiner';
 import { Like } from 'src/domain/map/Like';
 
 @Injectable()
 export class LikeService {
   constructor(
     @InjectRepository(Item) private itemRepository: Repository<Item>,
-    @InjectRepository(Group) private groupRepository: Repository<Group>,
+    @InjectRepository(Joiner) private joinerRepository: Repository<Joiner>,
     @InjectRepository(Like) private likeRepository: Repository<Like>,
     // private connection: Connection
   ) {
     // this.connection = connection;
     this.itemRepository = itemRepository;
-    this.groupRepository = groupRepository;
+    this.joinerRepository = joinerRepository;
+    this.likeRepository = likeRepository;
   }
   /**
    * User 리스트 조회
