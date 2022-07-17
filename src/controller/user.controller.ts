@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Res } from '@nestjs/co
 import { UserService } from '../service/user.service';
 // import { TestService } from '../test/test.service';
 import { User } from '../domain/User';
+import { userGen } from 'src/utils/dataFormater';
 @Controller('user')
 export class UserController {
   constructor(
@@ -9,14 +10,10 @@ export class UserController {
   ) {
     this.userService = userService;
   }
-  // @Get('test')
-  // findAnotherTest(): string {
-  //   return this.testService.getInfo();
-  // }
-
 
   @Get('list')  //  모든 유저의 목록 조회
   async findAll(): Promise<User[]> {
+    // console.log("GET /user/list req rcvd");
     const userList = await this.userService.findAll();
     console.log(userList);
     return Object.assign({
@@ -28,30 +25,21 @@ export class UserController {
 
   @Post() //  유저 회원가입
   async saveUser(@Body() body): Promise<string> {
-    console.log("request recieved");
-    // validateToken(user.userId, user.token);
+    // console.log("POST /user req rcvd");
 
-    if(await this.userService.findOne(body.id)){ 
+    if(await this.userService.findOne(body.id)){  //  기존에 있던 ID면 등록 거절
       return Object.assign({
-        data: { /* id: this.userKey,  */
-          ...body },
+        data: {...body },
         statusCode: 401,
-        statusMsg: `이미 있는 ID입니다!`,
+        statusMsg: `이미 존재하는 ID입니다!`,
       });
     }
-
-    const user = new User();
-    user.id = body.id;
-    user.name = body.name;
-    user.password = body.password;
-    user.isActive = false;
-    user.budget = 0;
-    user.iskakao = false;
+    //  기존에 없는 ID일 경우 회원 신규 등록 진행
+    const user = userGen(body.id, body.password, body.name, false);
     await this.userService.saveUser(user);
 
     return Object.assign({
-      data: { /* id: this.userKey,  */
-        ...user },
+      data: {...user },
       statusCode: 201,
       statusMsg: `회원가입이 성공적으로 완료되었습니다.`,
     });
@@ -59,50 +47,39 @@ export class UserController {
   
   @Put()// 로그인작업
   async loginUser(@Body() body): Promise<string> {
-    console.log("login request arrived");
+    // console.log("login request arrived");
     console.log(body);
-    // validateToken(user.userId, user.token);
-    // await this.userService.saveUser({ /* id: this.generateUserId(), */ ...user});
-    if(body.isKakaoLogin == "true"){  //nestJs 특성상 body.isKakaoLogin 의 true/false 여부가 꼬일 수 있다. 조심!!!!
+    if(body.isKakaoLogin == "true"){  //nestJs 특성상 body.isKakaoLogin 의 true/false data type이 꼬일 수 있다. 조심!!!!
       const kUser = await this.userService.findOne(body.id);
-      if(kUser == null){
-        const nkUser = new User();
-        nkUser.id = body.id;
-        nkUser.name = body.name;
-        nkUser.iskakao = true;
-        nkUser.budget = 0;
-        nkUser.isActive = true;
+      if(kUser == null){  //  카카오가 유저가 기존에 없던 ID일 시, 신규등록과 로그인 동시 진행
+        const nkUser = userGen(body.id, null, body.name, true);
         await this.userService.saveUser(nkUser);
         return Object.assign({
-          data: { /* id: this.userKey,  */
-            ...nkUser },
+          data: {...nkUser },
           statusCode: 201,
           statusMsg: `신규 카카오 회원 등록 및 로그인 성공`,
         });
-      }else{
+      }else{  //  카카오 유저가 기존에 존재하던 ID일 시, 정상로그인 진행
         kUser.isActive = true;
         await this.userService.saveUser(kUser);
         return Object.assign({
-          data: { /* id: this.userKey,  */
-            ...kUser },
+          data: {...kUser },
           statusCode: 201,
           statusMsg: `카카오 로그인 성공`,
         });
       }
-    }else{
+    }else{  //  카카오 로그인이 아닐경우, 회원가입은 무조건 선행돼 있어야 한다.
       const user = await this.userService.findOne(body.id);
       if(!(user)){
         return Object.assign({
-          data: { /* id: this.userKey,  */
-            ...body },
+          data: {...body },
           statusCode: 401,
           statusMsg: `존재하지 않는 회원입니다!`,
         });
       }
       if((user.password !== body.password)){
         return Object.assign({
-          data: { /* id: this.userKey,  */
-            ...body },
+          data: {...body },
           statusCode: 401,
           statusMsg: `올바르지 않은 비밀번호입니다!`,
         });
@@ -112,29 +89,26 @@ export class UserController {
   
       await this.userService.saveUser(user);
       const response =  Object.assign({
-        data: { /* id: this.userKey,  */
+        data: {
           ...user },
         statusCode: 201,
         statusMsg: `로그인 성공`,
       });
-      console.log("response is...");
+      console.log("Login Succeeded and response is : ");
       console.log(response);
       return response;
     }
-   
   }
-
 
   @Put(':userId/logout')  // 로그아웃
   async logout(@Param('userId') userId: string, @Body() body): Promise<string>{
-    console.log("logout request arrived");
+    // console.log("PUT user/:userId/logout req rcvd");
     console.log(userId);
     console.log(body);
+
     const user = await this.userService.findOne(userId);
     if(!user){ return Object.assign({
-      data: {
-        userId,
-      },
+      data: {userId},
       statusCode: 404,
       statusMsg: '존재하지 않는 회원입니다.',
     })
@@ -142,7 +116,6 @@ export class UserController {
     user.isActive = false;
     await this.userService.saveUser(user);
 
-    
     const response = Object.assign({
       data: {
         id : userId,
@@ -150,13 +123,15 @@ export class UserController {
       statusCode: 204,
       statusMsg: '로그아웃이 성공적으로 완료되었습니다.',
     })
-    console.log("response is...");
+    console.log("LOGOUT succeeded. response is : ");
     console.log(response);
     return response;
   }
 
   @Get(':userId') //회원정보 조회
   async findOne(@Param('userId') id: string, @Body() body): Promise<User> {
+    // console.log("GET /user/:userId req rcvd");
+
     const foundUser = await this.userService.findOne(id);
     if(foundUser){
       return Object.assign({
@@ -172,21 +147,21 @@ export class UserController {
     });
   }
 
-  
-
   @Delete(':userId')  //회원 탈퇴
   async deleteUser(@Param('userId') id: string, @Body() body): Promise<string> {
+    // console.log("DEL /user/:userId req rcvd");
 
-    const deleteuser = await this.userService.findOne(id);    
-    if(!deleteuser){ 
+    const delUser = await this.userService.findOne(id);    
+    if(!delUser){ 
       return Object.assign({
       data: { userId: id },
       statusCode: 400,
       statusMsg: `존재하지 않는 회원입니다.`,
     });
-
     }
-    const user = await this.userService.deleteUser(id);
+
+    await this.userService.deleteUser(id);
+
     return Object.assign({
       data: { userId: id },
       statusCode: 201,
@@ -194,16 +169,36 @@ export class UserController {
     });
   }
 
-  @Put(':userId/defRegion')
+  @Put(':userId/defRegion') //  유저의 동네 설정 - 회원가입 때 적는 정보가 아니라, 메인 페이지로 넘어가기 전 or 동네 변경시 작성한다.
   async setUsersDefaultRegion(@Param('userId') userId:string, @Body() body):Promise<void>{
+    // console.log("PUT /user/:userId/defRegion req rcvd");
+
     const user = await this.userService.findOne(userId);
+    if(user == null){
+      return Object.assign({
+        data: {userId},
+        statusCode: 400,
+        statusMsg: `수정하고자 하는 유저가 없습니다.`,
+      });
+    }
     user.defState = body.state;
     user.defArea = body.area;
     user.defTown = body.town;
+    return Object.assign({
+      data: {
+        state: user.defState,
+        area: user.defArea,
+        town: user.defTown
+      },
+      statusCode: 204,
+      statusMsg: `유저의 기본 지역정보가 성공적으로 갱신되었습니다.`,
+    });
   }
 
-  @Get(':userId/defRegion')
+  @Get(':userId/defRegion') //  유저의 동네설정 조회 - 메인페이지로 넘어갈 때, 이미 기존에 유저가 설정해논 지역정보가 있다면 이를 받아온다.
   async getUsersDefaultReginon(@Param('userId') userId:string):Promise<object>{
+    // console.log("GET /user/:userId/defRegion req rcvd");
+
     const user = await this.userService.findOne(userId);
     if(user == null){
       return Object.assign({
@@ -212,20 +207,21 @@ export class UserController {
         statusMsg: `조회하고자 하는 유저가 없습니다.`,
       });
     }
-    const regionData = {
-      state: user.defState,
-      area: user.defArea,
-      town: user.defTown
-    }
     return Object.assign({
-      data: regionData,
+      data: {
+        state: user.defState,
+        area: user.defArea,
+        town: user.defTown
+      },
       statusCode: 204,
-      statusMsg: `유저의 기본 지역정보가 성공적으로 갱신되었습니다.`,
+      statusMsg: `유저의 기본 지역정보가 성공적으로 조회되었습니다.`,
     });
   }
 
-  @Put(':userId/budget')
+  @Put(':userId/budget')  //  유저의 잔고를 갱신. 유저가 특정 상품의 공구에 참여 / 참여취소 시에 공구금액을 차감 / 추가 후 새로운 잔고를 갱신한다.
   async updateBudget(@Param('userId') userId:string, @Body() body):Promise<void>{
+    // console.log("PUT /user/:userId/budget req rcvd");
+
     const user = await this.userService.findOne(userId);
     user.budget = body.newValue;
     await this.userService.saveUser(user);
@@ -239,77 +235,3 @@ export class UserController {
     });
   }
 }
-
-
-// import { Body, Controller, Get, Param, Post, Res } from '@nestjs/common';
-// import { UserDto } from './dto/user.dto';
-// import { UserService } from './user.service';
-
-// @Controller('user')
-// export class UserController {
-//   // @Get(':userId')
-//   // findOne(@Param('userId') id: string): string {
-//   //   return Object.assign({ id, userName: '이정주' });
-//   // }
-
-//   //Dependency Injection
-//   constructor(private userService: UserService) {
-//     this.userService = userService;
-//   }
-
-
-
-//   // @Get('list')
-//   // findAll(): Promise<any[]> {
-//   //   return new Promise((resolve) =>
-//   //     setTimeout(
-//   //       () => resolve([{ userName: '이정주' }, { userName: '김명일' }]),
-//   //       100,
-//   //     ),
-//   //   );
-//   // }
-
-//   // @Get(':userId')
-//   // findOne(@Param('userId') id: string, @Res() res): string {
-//   //   // return res.status(200).send({ id, userName: '이정주', accountNum: 123 });
-//   //   return res.status(200).send({ id, userName: '이정주', accountNum: 123 });
-//   // }
-
-//   // @Post()
-//   // saveUser(@Body() payload): string {
-//   //   return Object.assign({
-//   //     statusCode: 201,
-//   //     data: payload,
-//   //     statusMsg: 'created successfully',
-//   //   });
-//   // }
-
-//   // @Post()
-//   // saveUser(@Body() userDto: UserDto): string {
-//   //   return Object.assign({
-//   //     data: { ...userDto },
-//   //     statusCode: 201,
-//   //     statusMsg: `saved successfully`,
-//   //   });
-//   // }
-
-//   @Get('list')
-//   findAll(): Promise<UserDto[]> {
-//     return this.userService.findAll();
-//   }
-//   @Get(':userId')
-//   findOne(@Param('userId') id: string): any | object {
-//     return this.userService.findOne(id);
-//   }
-//   @Post()
-//   saveUser(@Body() userDto: UserDto): string {
-//     this.userService.saveUser(userDto);
-//     return Object.assign({
-//       data: { ...userDto },
-//       statusCode: 201,
-//       statusMsg: `saved successfully`,
-//     });
-//   }
-
-
-// }

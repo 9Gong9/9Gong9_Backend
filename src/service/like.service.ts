@@ -4,7 +4,7 @@ import { User } from '../domain/User';
 import { Connection, Repository } from 'typeorm/index';
 import { Item } from '../domain/Item';
 import { Joiner } from 'src/domain/Joiner';
-import { Like } from 'src/domain/map/Like';
+import { Like } from 'src/domain/Like';
 
 @Injectable()
 export class LikeService {

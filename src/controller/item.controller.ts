@@ -1,14 +1,14 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Res } from '@nestjs/common';
 import { UserService } from '../service/user.service';
-// import { TestService } from '../test/test.service';
 import { User } from '../domain/User';
 import { ItemService } from 'src/service/item.service';
 import { Item } from 'src/domain/Item';
 import { JoinerService } from 'src/service/Joiner.service';
 import { LikeService } from 'src/service/like.service';
-import { Like } from 'src/domain/map/Like';
+import { Like } from 'src/domain/Like';
 import { Joiner } from 'src/domain/Joiner';
-import { getItemData, getRegionData } from 'src/datareturn';
+import { getItemData, getRegionData } from 'src/utils/dataImporter';
+import { itemFormat, itemListFormat, itemListFormatWithUsersJoinLike } from 'src/utils/dataFormater';
 @Controller('item')
 export class ItemController {
   constructor(
@@ -71,6 +71,7 @@ export class ItemController {
               item.minMan = Math.floor(Math.random()*10);
               item.nowMan = 0;
               nowDate.setDate(nowDate.getDate() + Math.floor(Math.random()*10));
+              nowDate.setHours(0,0,0,0);  //  we don't need hh:mm:ss:msms info in this app
               item.dueDate = nowDate;
               item.imgUrl = e.imgUrl;
               item.category = category;
@@ -99,32 +100,27 @@ export class ItemController {
     });
   }
 
+  @Get('test')
+  async testFunc():Promise<void>{
+    const usersOngoingGroup = await this.joinerService.findWithUserCondition("jina0202"); 
+  }
+
+  
+  /* 여기서부터 메인  비즈니스 로직. 위에는 앱에서 보낼 일이 없는 Req 이다. */
+
+
   @Get('list/:state/:area/:town')  //  선택된 지역의 모든 상품 조회, 상품명 리스트와 함께 반환
   async findOne(@Param() param, @Body() body): Promise<Item[]> {
     const {state, area, town} = param;
+    const userId = body.userId;
+    if(await this.userService.findOne(userId) == null){
+      return Object.assign({
+        data:userId,
+        statusCode: 400,
+        statusMsg: '해당 ID의 회원은 존재하지 않습니다.'
+      })
+    }
     const foundItemList = await this.itemService.findWithRegionCondition(state, area, town);
-    const resultItemList = foundItemList.map((e)=>{
-      const date = e.dueDate;
-      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-      return {
-        id:e.id,
-        name:e.name,
-        rate:e.rate,
-        orgPrice:e.orgPrice,
-        salePrice:e.salePrice,
-        minMan:e.minMan,
-        nowMan:e.nowMan,
-        dueDate:newDueDate,
-        imgUrl:e.imgUrl,
-        category:e.category,
-        state:e.state,
-        area:e.area,
-        town:e.town,
-        likes:e.likes,
-        joiners:e.joiners
-      }
-
-    })
     console.log(state, area, town);
     if(!foundItemList){
       return Object.assign({
@@ -133,7 +129,12 @@ export class ItemController {
         statusMsg: '해당 지역에 상품이 없습니다.',
       });
     }
-    let foundNameList : string[] = [];
+
+    const usersJoinedGroup = await this.joinerService.findWithUserCondition(userId); 
+    const usersLikedGroup = await this.joinerService.findWithUserCondition(userId);
+    const resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikedGroup);
+
+    let foundNameList : string[] = [];  //  검색어자동완성 기능을 위한 NAME LIST 동봉 반환
     foundItemList.forEach(element => {
       foundNameList.push(element.name);
     });
@@ -148,46 +149,36 @@ export class ItemController {
     });
   }
 
-  @Get('list/:state/:area/:town/:category')  //  선택된 지역의 모든 상품 조회, 상품명 리스트와 함께 반환
+  @Get('list/:state/:area/:town/:category')  //  선택된 지역의 특정 품목 모든 상품 조회, 상품명 리스트와 함께 반환
   async findWithRegionCategory(@Param() param, @Body() body): Promise<Item[]> {
     const {state, area, town, category} = param;
+    const userId = body.userId;
+    if(await this.userService.findOne(userId) == null){
+      return Object.assign({
+        data:userId,
+        statusCode: 400,
+        statusMsg: '해당 ID의 회원은 존재하지 않습니다.'
+      })
+    }
     const foundItemList = await this.itemService.findWithRegionCategoryCondition(state, area, town, category);
-    const resultItemList = foundItemList.map((e)=>{
-      const date = e.dueDate;
-      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-      return {
-        id:e.id,
-        name:e.name,
-        rate:e.rate,
-        orgPrice:e.orgPrice,
-        salePrice:e.salePrice,
-        minMan:e.minMan,
-        nowMan:e.nowMan,
-        dueDate:newDueDate,
-        imgUrl:e.imgUrl,
-        category:e.category,
-        state:e.state,
-        area:e.area,
-        town:e.town,
-        likes:e.likes,
-        joiners:e.joiners
-      }
-
-    })
     console.log(state, area, town, category);
     if(!foundItemList){
       return Object.assign({
         data: foundItemList,
         statusCode: 400,
-        statusMsg: '해당 지역에 상품이 없습니다.',
+        statusMsg: '해당 지역 또는 품목에 상품이 없습니다.',
       });
     }
 
-    //  검색어자동완성 기능을 위한 NAME LIST 동봉 반환
-    let foundNameList : string[] = [];
+    const usersJoinedGroup = await this.joinerService.findWithUserCondition(userId); 
+    const usersLikedGroup = await this.joinerService.findWithUserCondition(userId);
+    const resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikedGroup);
+
+    let foundNameList : string[] = [];  //  검색어자동완성 기능을 위한 NAME LIST 동봉 반환
     foundItemList.forEach(element => {
       foundNameList.push(element.name);
     });
+
     return Object.assign({
       data: {
         foundNameList,
@@ -200,40 +191,33 @@ export class ItemController {
 
   @Get('/list/:userId/ongoing') //  현재 유저가 참여중인 ongoing 상품을 조회
   async findUsersOngoingItems(@Param('userId') userId: string):Promise<Item[]>{
-    const usersOngoingGroup = await this.joinerService.findWithUserCondition(userId);
-    const returnData = [];
+    if(await this.userService.findOne(userId) == null){
+      return Object.assign({
+        data:userId,
+        statusCode: 400,
+        statusMsg: '해당 ID의 회원은 존재하지 않습니다.'
+      })
+    }
+    const usersOngoingGroup = await this.joinerService.findWithUserCondition(userId); //  유저가 참여한 적 있는 상품 목록 가져오기
     const nowDate = new Date();
-    for(let i = 0; i <usersOngoingGroup.length;i++){
-      const candidateItem = await this.itemService.findOne(usersOngoingGroup[i].item.id);
-      if(candidateItem.dueDate > nowDate){
-        returnData.push(candidateItem);
+    nowDate.setHours(0,0,0,0);
+    const usersOngoingItemList = [];
+    for(let e of usersOngoingGroup){    //  날짜를 비교하여 마감이 아직 안 된 상품만 필터링
+      const candidateItem = await this.itemService.findOne(e.item.id);
+      if(candidateItem.dueDate >= nowDate){
+        usersOngoingItemList.push(candidateItem);
       }
     }
-    const resultItemList = returnData.map((e)=>{
-      const date = e.dueDate;
-      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-      return {
-        id:e.id,
-        name:e.name,
-        rate:e.rate,
-        orgPrice:e.orgPrice,
-        salePrice:e.salePrice,
-        minMan:e.minMan,
-        nowMan:e.nowMan,
-        dueDate:newDueDate,
-        imgUrl:e.imgUrl,
-        category:e.category,
-        state:e.state,
-        area:e.area,
-        town:e.town,
-        likes:e.likes,
-        joiners:e.joiners
-      }
-
-    })
+    // usersOngoingGroup.forEach(async (e)=>{    //  날짜를 비교하여 마감이 아직 안 된 상품만 필터링
+    //   const candidateItem = await this.itemService.findOne(e.item.id);
+    //   if(candidateItem.dueDate >= nowDate){
+    //     usersOngoingItemList.push(candidateItem);
+    //   }
+    // });
+    const resultItemList = itemListFormat(usersOngoingItemList);
     return Object.assign({
       data: { usersOngoingItems:resultItemList },
-      statusCode: 201,
+      statusCode: 200,
       statusMsg: `유저의 관심 목록이 성공적으로 조회되었습니다.`,
     });
   }
@@ -241,47 +225,45 @@ export class ItemController {
   
   @Get('/list/:userId/previous') //  유저가 참여했던 상품목록을 조회
   async findUsersPreviousItems(@Param('userId') userId: string):Promise<Item[]>{
-    const usersPrevGroup = await this.joinerService.findWithUserCondition(userId);
+    if(await this.userService.findOne(userId) == null){
+      return Object.assign({
+        data:userId,
+        statusCode: 400,
+        statusMsg: '해당 ID의 회원은 존재하지 않습니다.'
+      })
+    }
+    const usersPrevGroup = await this.joinerService.findWithUserCondition(userId);  //  유저가 참여한 적 있는 상품 목록 가져오기
     console.log(usersPrevGroup);
-    const returnData = [];
     const nowDate = new Date();
-    for(let i = 0; i <usersPrevGroup.length;i++){
-
-      const candidateItem = await this.itemService.findOne(usersPrevGroup[i].item.id);
+    nowDate.setHours(0,0,0,0);
+    const usersPrevItemList = [];
+    for (let e of usersPrevGroup){   //  날짜를 비교하여 마감이 이미 된 상품만 필터링
+      const candidateItem = await this.itemService.findOne(e.item.id);
       console.log("dueDate");
       console.log(candidateItem.dueDate);
       if(candidateItem.dueDate < nowDate){
         console.log(candidateItem);
-        returnData.push(candidateItem);
+        usersPrevItemList.push(candidateItem);
       }
     }
-    const resultItemList = returnData.map((e)=>{
-      const date = e.dueDate;
-      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-      return {
-        id:e.id,
-        name:e.name,
-        rate:e.rate,
-        orgPrice:e.orgPrice,
-        salePrice:e.salePrice,
-        minMan:e.minMan,
-        nowMan:e.nowMan,
-        dueDate:newDueDate,
-        imgUrl:e.imgUrl,
-        category:e.category,
-        state:e.state,
-        area:e.area,
-        town:e.town,
-        likes:e.likes,
-        joiners:e.joiners
-      }
-
-    })
-    return Object.assign({
+    // usersPrevGroup.forEach(async (e)=>{   //  날짜를 비교하여 마감이 이미 된 상품만 필터링
+    //   const candidateItem = await this.itemService.findOne(e.item.id);
+    //   console.log("dueDate");
+    //   console.log(candidateItem.dueDate);
+    //   if(candidateItem.dueDate < nowDate){
+    //     console.log(candidateItem);
+    //     usersPrevItemList.push(candidateItem);
+    //   }
+    // })
+    const resultItemList = itemListFormat(usersPrevItemList);
+    const response =  Object.assign({
       data: resultItemList,
-      statusCode: 201,
+      statusCode: 200,
       statusMsg: `유저의 과거참여 목록이 성공적으로 조회되었습니다.`,
     });
+    console.log("RESPONSE : ");
+    console.log(response);
+    return response;
   }
 
   @Get('/list/:userId/likes') //  유저가 관심있는 목록을 조회
@@ -289,45 +271,32 @@ export class ItemController {
     if(await this.userService.findOne(userId) == null){
       return Object.assign({
         data:userId,
-        statusCode: 40,
+        statusCode: 400,
         statusMsg: '해당 ID의 회원은 존재하지 않습니다.'
       })
     }
-    const usersLikedGroup = await this.joinerService.findWithUserCondition(userId);
-    const returnData = [];
+    const usersLikedGroup : Like[]= await this.likeService.findWithUserCondition(userId);
     const nowDate = new Date();
-    for(let i = 0; i <usersLikedGroup.length;i++){
-      const candidateItem = await this.itemService.findOne(usersLikedGroup[i].item.id);
-      if(candidateItem.dueDate > nowDate){
-        returnData.push(candidateItem);
-      }
-    }
-    const resultItemList = returnData.map((e)=>{
-      const date = e.dueDate;
-      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-      return {
-        id:e.id,
-        name:e.name,
-        rate:e.rate,
-        orgPrice:e.orgPrice,
-        salePrice:e.salePrice,
-        minMan:e.minMan,
-        nowMan:e.nowMan,
-        dueDate:newDueDate,
-        imgUrl:e.imgUrl,
-        category:e.category,
-        state:e.state,
-        area:e.area,
-        town:e.town,
-        likes:e.likes,
-        joiners:e.joiners
+    nowDate.setHours(0,0,0,0);
+    const usersLikedItemList = [];
+    for(let e of usersLikedGroup){  //  날짜를 비교하여 마감이 아직 안 된 상품만 필터링
+      const candidateItem = await this.itemService.findOne(e.item.id);
+      if(candidateItem.dueDate >= nowDate){
+        usersLikedItemList.push(candidateItem);
       }
 
-    })
+    }
+    // usersLikedGroup.forEach(async (e)=>{  //  날짜를 비교하여 마감이 아직 안 된 상품만 필터링
+    //   const candidateItem = await this.itemService.findOne(e.item.id);
+    //   if(candidateItem.dueDate >= nowDate){
+    //     usersLikedItemList.push(candidateItem);
+    //   }
+    // });
+    const resultItemList = itemListFormat(usersLikedItemList);
     return Object.assign({
       data: { usersLikedItem:resultItemList },
-      statusCode: 201,
-      statusMsg: `유저의 참여 목록이 성공적으로 조회되었습니다.`,
+      statusCode: 200,
+      statusMsg: `유저의 관심 목록이 성공적으로 조회되었습니다.`,
     });
   }
   
@@ -335,36 +304,27 @@ export class ItemController {
   async findOneItem(@Param('itemId') itemId: number): Promise<Item> {
     console.log('get item with id : '+ itemId);
     const item = await this.itemService.findOne(itemId);
-    const date = item.dueDate;
-    const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
     console.log(item);
     return Object.assign({
-      data: {
-        id:item.id,
-        name:item.name,
-        rate:item.rate,
-        orgPrice:item.orgPrice,
-        salePrice:item.salePrice,
-        minMan:item.minMan,
-        nowMan:item.nowMan,
-        dueDate:newDueDate,
-        imgUrl:item.imgUrl,
-        category:item.category,
-        state:item.state,
-        area:item.area,
-        town:item.town,
-        likes:item.likes,
-        joiners:item.joiners
+      data: { 
+        ...itemFormat(item)
       },
       statusCode: 200,
       statusMsg: `상품 조회가 성공적으로 완료되었습니다.`,
     });
   }
 
-  @Put('/like/:userId/:itemId') //  유저가 상품에 누른 좋아요의 toggle
+  @Put('/like/:userId/:itemId') //  유저가 상품에 누른 좋아요(관심)의 toggle
   async toggleUsersLikeItem(@Param() param):Promise<void>{
     const userId = param.userId;
     const itemId = param.itemId;
+    if(await this.userService.findOne(userId) == null){
+      return Object.assign({
+        data:userId,
+        statusCode: 400,
+        statusMsg: '해당 ID의 회원은 존재하지 않습니다.'
+      })
+    }
     let nowLiked :boolean;
     const ifAlreadyLiked = await this.likeService.findWithUserItemCondition(userId, itemId);
     if(ifAlreadyLiked == null){
@@ -439,7 +399,9 @@ export class ItemController {
     item.salePrice = body.salePrice;
     item.minMan = body.minMan;
     item.nowMan = 0
-    item.dueDate = new Date(body.dueDate);
+    const newDate = new Date(body.dueDate);
+    newDate.setHours(0,0,0,0);
+    item.dueDate = newDate;
     item.imgUrl = body.imgUrl;
     item.category = body.category;
     item.state = body.state;
@@ -449,7 +411,7 @@ export class ItemController {
     return Object.assign({
       data:item,
       statusCode: 201,
-      statusMsg: `유저의 참여여부 변경이 성공적으로 반영되었습니다.`,
+      statusMsg: `아이템이 성공적으로 추가되었습니다.`,
     });
   }
 }

@@ -6,7 +6,7 @@ import { User } from './domain/User';
 import { Item } from './domain/Item';
 import { ItemService } from './service/item.service';
 import { ItemController } from './controller/item.controller';
-import { Like } from './domain/map/Like';
+import { Like } from './domain/Like';
 import { Joiner } from './domain/Joiner';
 import { JoinerService } from './service/Joiner.service';
 import { LikeService } from './service/like.service';

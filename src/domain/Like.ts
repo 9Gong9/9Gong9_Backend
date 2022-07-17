@@ -1,6 +1,6 @@
 import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, PrimaryGeneratedColumn, Unique } from 'typeorm/index';
-import { Item } from '../Item';
-import { User } from '../User';
+import { Item } from './Item';
+import { User } from './User';
 @Entity()
 
 @Unique(['user', 'item'])

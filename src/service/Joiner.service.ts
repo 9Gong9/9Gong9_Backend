@@ -16,9 +16,7 @@ export class JoinerService {
     this.itemRepository = itemRepository;
     this.joinerRepository = joinerRepository;
   }
-  /**
-   * User 리스트 조회
-   */
+  /*** User 리스트 조회   */
    async findAll(): Promise<Joiner[]> {
     return this.joinerRepository.find();
   }

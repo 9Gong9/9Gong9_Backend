@@ -2,7 +2,7 @@ import { group } from 'console';
 import { BaseEntity, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn, Unique } from 'typeorm/index';
 import { Url } from 'url';
 import { Joiner } from './Joiner';
-import { Like } from './map/Like';
+import { Like } from './Like';
 @Entity()
 
 @Unique(['id'])

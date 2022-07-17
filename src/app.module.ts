@@ -4,9 +4,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Joiner } from './domain/Joiner';
 import { Item } from './domain/Item';
-import { Like } from './domain/map/Like';
+import { Like } from './domain/Like';
 import { User } from './domain/User';
 import { ManageModule } from './manage.module';
+import { LoggerMiddleware } from './utils/logger.middleware';
 
 
 @Module({
@@ -24,4 +25,8 @@ import { ManageModule } from './manage.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule{
+  configure( consumer: MiddlewareConsumer){
+    consumer.apply(LoggerMiddleware).forRoutes('');
+  }
+}
