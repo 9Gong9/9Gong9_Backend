@@ -133,7 +133,7 @@ export class ItemController {
     const usersJoinedGroup = await this.joinerService.findWithUserCondition(userId); 
     const usersLikedGroup = await this.likeService.findWithUserCondition(userId);
     let resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikedGroup);
-    if(query.searchWord != null){
+    if(query.searchWord != null){ //  query에 searchWord가 포함되어 있을 시, 검색어를 필터링한 결과를 보낸다
       resultItemList = itemListFilterWithSearchWord(resultItemList, query.searchWord);
     }
 
@@ -142,6 +142,10 @@ export class ItemController {
       foundNameList.push(element.name);
     });
 
+    console.log("FOUND NAME LIST :");
+    console.log(foundNameList);
+    console.log("FOUND ITEM LIST");
+    console.log(resultItemList);
     return Object.assign({
       data: {
         foundNameList,
@@ -176,7 +180,7 @@ export class ItemController {
     const usersJoinedGroup = await this.joinerService.findWithUserCondition(userId); 
     const usersLikedGroup = await this.likeService.findWithUserCondition(userId);
     let resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikedGroup);
-    if(query.searchWord != null){
+    if(query.searchWord != null){ //  query에 searchWord가 포함되어 있을 시, 검색어를 필터링한 결과를 보낸다
       resultItemList = itemListFilterWithSearchWord(resultItemList, query.searchWord);
     }
 
