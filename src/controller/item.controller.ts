@@ -8,7 +8,7 @@ import { LikeService } from 'src/service/like.service';
 import { Like } from 'src/domain/Like';
 import { Joiner } from 'src/domain/Joiner';
 import { getItemData, getRegionData } from 'src/utils/dataImporter';
-import { itemFormat, itemFormatWithUserJoinLike, itemListFormat, itemListFormatWithUsersJoinLike } from 'src/utils/dataFormater';
+import { itemFormat, itemFormatWithUserJoinLike, itemListFilterWithSearchWord, itemListFormat, itemListFormatWithUsersJoinLike } from 'src/utils/dataFormater';
 @Controller('item')
 export class ItemController {
   constructor(
@@ -110,7 +110,7 @@ export class ItemController {
 
 
   @Get('list/:state/:area/:town')  //  선택된 지역의 모든 상품 조회, 상품명 리스트와 함께 반환
-  async findOne(@Param() param, @Body() body): Promise<Item[]> {
+  async findOne(@Param() param, @Body() body, @Query() query): Promise<Item[]> {
     const {state, area, town} = param;
     const userId = body.userId;
     if(await this.userService.findOne(userId) == null){
@@ -132,7 +132,10 @@ export class ItemController {
 
     const usersJoinedGroup = await this.joinerService.findWithUserCondition(userId); 
     const usersLikedGroup = await this.likeService.findWithUserCondition(userId);
-    const resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikedGroup);
+    let resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikedGroup);
+    if(query.searchWord != null){
+      resultItemList = itemListFilterWithSearchWord(resultItemList, query.searchWord);
+    }
 
     let foundNameList : string[] = [];  //  검색어자동완성 기능을 위한 NAME LIST 동봉 반환
     foundItemList.forEach(element => {
@@ -150,7 +153,7 @@ export class ItemController {
   }
 
   @Get('list/:state/:area/:town/:category')  //  선택된 지역의 특정 품목 모든 상품 조회, 상품명 리스트와 함께 반환
-  async findWithRegionCategory(@Param() param, @Body() body): Promise<Item[]> {
+  async findWithRegionCategory(@Param() param, @Body() body, @Query() query): Promise<Item[]> {
     const {state, area, town, category} = param;
     const userId = body.userId;
     if(await this.userService.findOne(userId) == null){
@@ -172,7 +175,10 @@ export class ItemController {
 
     const usersJoinedGroup = await this.joinerService.findWithUserCondition(userId); 
     const usersLikedGroup = await this.likeService.findWithUserCondition(userId);
-    const resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikedGroup);
+    let resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikedGroup);
+    if(query.searchWord != null){
+      resultItemList = itemListFilterWithSearchWord(resultItemList, query.searchWord);
+    }
 
     let foundNameList : string[] = [];  //  검색어자동완성 기능을 위한 NAME LIST 동봉 반환
     foundItemList.forEach(element => {

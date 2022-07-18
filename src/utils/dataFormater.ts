@@ -149,3 +149,10 @@ export function itemListFormatWithUsersJoinLike(itemList:Item[], joinedList:Join
     // console.log(resultItem);
     return resultItem;
   }
+
+  export function itemListFilterWithSearchWord(itemList, searchWord:string):object[]{
+    const resultItemList = itemList.filter((e)=>{
+      return ((e.name).includes(searchWord));
+    });
+    return resultItemList;
+  }
