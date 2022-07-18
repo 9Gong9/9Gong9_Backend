@@ -1,4 +1,5 @@
 import { BaseEntity, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn, Unique } from 'typeorm/index';
+import { Gotter } from './Gotter';
 import { Joiner } from './Joiner';
 import { Liker } from './Liker';
 @Entity()
@@ -40,4 +41,9 @@ export class User extends BaseEntity{
     eager: true
   })
   joiners: Joiner[];
+  @OneToMany(type=>Gotter, gotter => gotter.user, {
+    onDelete:'CASCADE',
+    eager: true
+  })
+  gotters: Gotter[];
 }

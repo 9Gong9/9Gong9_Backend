@@ -3,6 +3,7 @@ import { BaseEntity, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedC
 import { Url } from 'url';
 import { Joiner } from './Joiner';
 import { Liker } from './Liker';
+import { Gotter } from './Gotter';
 @Entity()
 
 @Unique(['id'])
@@ -13,6 +14,8 @@ export class Item extends BaseEntity{
   name: string;
   @Column({type: 'decimal', precision: 2, scale: 1, nullable:true})
   rate: number;
+  @Column({nullable:true})
+  rateMan: number;
   @Column({ nullable:true })
   orgPrice: number;
   @Column({ nullable:true })
@@ -45,4 +48,9 @@ export class Item extends BaseEntity{
     eager: true
   })
   joiners: Joiner[];
+  @OneToMany(type=>Gotter, gotter => gotter.item, {
+    onDelete:'CASCADE',
+    eager: true
+  })
+  gotters: Gotter[];
 }

@@ -1,3 +1,4 @@
+import { Gotter } from "src/domain/Gotter";
 import { Item } from "src/domain/Item";
 import { Joiner } from "src/domain/Joiner";
 import { Liker } from "src/domain/Liker";
@@ -66,8 +67,11 @@ export function itemFormat(e: Item):object{
   return resultItem;
 }
 
-export function itemListFormatWithUsersJoinLike(itemList:Item[], joinedList:Joiner[], likedList:Liker[]):object[]{
+export function itemListFormatWithUsersJoinLikeGot(itemList:Item[], joinedList:Joiner[], likedList:Liker[], gottedList: Gotter[]):object[]{
   const joinedIdList = joinedList.map((e)=>{
+    return e.item.id;
+  });
+  const gottedIdList = gottedList.map((e)=>{
     return e.item.id;
   });
   const likedIdList = likedList.map((e)=>{
@@ -93,10 +97,14 @@ export function itemListFormatWithUsersJoinLike(itemList:Item[], joinedList:Join
       likes:e.likers,
       joiners:e.joiners,
       userJoinedIt: false,
+      userGotIt: false,
       userLikedIt: false,
     }
     if(joinedIdList.includes(e.id)){
       result.userJoinedIt = true;
+    }
+    if(gottedIdList.includes(e.id)){
+      result.userGotIt = true;
     }
     if(likedIdList.includes(e.id)){
       result.userLikedIt = true;
@@ -106,10 +114,15 @@ export function itemListFormatWithUsersJoinLike(itemList:Item[], joinedList:Join
   return resultItemList;
   };
 
-  export function itemFormatWithUserJoinLike(e: Item, joinedList:Joiner[], likedList:Liker[]):object{
+  export function itemFormatWithUserJoinLikeGot(e: Item, joinedList:Joiner[], likedList:Liker[], gottedList: Gotter[]):object{
     const joinedIdList = joinedList.map((e)=>{
       return e.item.id;
     });
+    const gottedIdList = gottedList.map((e)=>{
+      return e.item.id;
+    });
+    console.log("gottedIdList is...");
+    console.log(gottedIdList);
     // console.log("joinedIdList is ...");
     // console.log(joinedIdList);
     const likedIdList = likedList.map((e)=>{
@@ -136,10 +149,20 @@ export function itemListFormatWithUsersJoinLike(itemList:Item[], joinedList:Join
       likes:e.likers,
       joiners:e.joiners,
       userJoinedIt: false,
+      userGotIt: false,
       userLikedIt: false,
+      usersRate: null,
     };
     if(joinedIdList.includes(e.id)){
       resultItem.userJoinedIt = true;
+    }
+    console.log("item's id : ");
+    console.log(e.id);
+    if(gottedIdList.includes(e.id)){
+      console.log("THE USER HAS ALREADY GOT THIS ITEM");
+      console.log(resultItem);
+      resultItem.userGotIt = true;
+      resultItem.usersRate = gottedList[gottedIdList.indexOf(e.id)].usersRate;
     }
     if(likedIdList.includes(e.id)){
       console.log("user Liked It!");

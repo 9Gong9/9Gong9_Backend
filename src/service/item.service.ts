@@ -46,7 +46,9 @@ export class ItemService {
   }
 
   //  2번째 탭에서 카테고리를 설정했을 때, 지역조건 & 카테고리 조건으로 검색
-  async findWithRegionCategoryCondition(state, area, town, category){
+  async findWithRegionCategoryCondition(state:string, area:string, town:string, category:string){
+    console.log("CATEGORY is : ");
+    console.log(category);
     return await this.itemRepository.find(
       {
         where: {

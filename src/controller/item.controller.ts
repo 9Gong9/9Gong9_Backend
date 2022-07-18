@@ -1,26 +1,30 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res } from '@nestjs/common';
+import { Body, ConsoleLogger, Controller, Delete, Get, Param, Post, Put, Query, Res } from '@nestjs/common';
 import { UserService } from '../service/user.service';
 import { User } from '../domain/User';
 import { ItemService } from 'src/service/item.service';
 import { Item } from 'src/domain/Item';
-import { JoinerService } from 'src/service/Joiner.service';
+import { JoinerService } from 'src/service/joiner.service';
 import { LikerService } from 'src/service/liker.service';
 import { Liker } from 'src/domain/Liker';
 import { Joiner } from 'src/domain/Joiner';
 import { getItemData, getRegionData } from 'src/utils/dataImporter';
-import { itemFormat, itemFormatWithUserJoinLike, itemListFilterWithSearchWord, itemListFormat, itemListFormatWithUsersJoinLike } from 'src/utils/dataFormater';
+import { itemFormat, itemFormatWithUserJoinLikeGot, itemListFilterWithSearchWord, itemListFormat, itemListFormatWithUsersJoinLikeGot } from 'src/utils/dataFormater';
+import { GotterService } from 'src/service/gotter.service';
+import { Gotter } from 'src/domain/Gotter';
 @Controller('item')
 export class ItemController {
   constructor(
     private userService: UserService,
     private itemService: ItemService,
     private joinerService: JoinerService,
-    private likerService: LikerService
+    private likerService: LikerService,
+    private gotterService: GotterService,
   ) {
     this.userService = userService;
     this.itemService = itemService;
     this.joinerService = joinerService;
     this.likerService = likerService;
+    this.gotterService = gotterService;
   } 
 
   @Get('regionList')  //  대전광역시의 시군구 정보를 불러온다. 런칭된 앱에서는 쓸 일 없음
@@ -39,20 +43,20 @@ export class ItemController {
     const siteList = [
       ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095739","과일"],
       ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095740","채소"],
-      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095498","쌀/잡곡/견과"],
-      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095499","정육/계란류"],
-      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095500","수산물/건해산"],
-      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095501","우유/유제품/유아식"],
-      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095502","냉장/냉동/간편식"],
-      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095507","생수/음료/주류"],
-      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095503","밀키트/김치/반찬"],
-      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095508","커피/원두/차"],
-      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095504","라면/면류/즉석식품/통조림"],
-      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095509","장류/양념/가루/오일"],
-      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095505","과자/시리얼/빙과/떡"],
-      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095506","베이커리/잼/샐러드"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095498","쌀잡곡견과"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095499","정육계란류"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095500","수산물건해산"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095501","우유유제품유아식"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095502","냉장냉동간편식"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095507","생수음료주류"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095503","밀키트김치반찬"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095508","커피원두차"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095504","라면면류즉석식품통조림"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095509","장류양념가루오일"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095505","과자시리얼빙과떡"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095506","베이커리잼샐러드"],
       ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095510","건강식품"],
-      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095511","친환경/유기농"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095511","친환경유기농"],
     ];
     for(let ele of siteList){
       await setTimeout(()=>console.log("waiting..."), 500);
@@ -69,9 +73,10 @@ export class ItemController {
               item.rate = element.rate;
               item.orgPrice = element.orgPrice;
               item.salePrice = element.salePrice;
-              item.minMan = Math.floor(Math.random()*10);
+              item.minMan = Math.ceil(Math.random()*5);
               item.nowMan = 0;
-              nowDate.setDate(nowDate.getDate() + Math.floor(Math.random()*10));
+              item.rateMan = 1;
+              nowDate.setDate(nowDate.getDate() + Math.ceil(Math.random()*10));
               nowDate.setHours(0,0,0,0);  //  we don't need hh:mm:ss:msms info in this app
               item.dueDate = nowDate;
               item.imgUrl = element.imgUrl;
@@ -105,7 +110,6 @@ export class ItemController {
         }
       }
       console.log("Done!");
-      await setTimeout(()=>{return}, 10000);
     }
     // siteList.forEach(async (e)=>{
     // })
@@ -154,8 +158,9 @@ export class ItemController {
     }
 
     const usersJoinedGroup = await this.joinerService.findWithUserCondition(userId); 
-    const usersLikerdGroup = await this.likerService.findWithUserCondition(userId);
-    let resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikerdGroup);
+    const usersLikedGroup = await this.likerService.findWithUserCondition(userId);
+    const usersGottedGroup = await this.gotterService.findWithUserCondition(userId);
+    let resultItemList = itemListFormatWithUsersJoinLikeGot(foundItemList, usersJoinedGroup, usersLikedGroup, usersGottedGroup);
     if(query.searchWord != null){ //  query에 searchWord가 포함되어 있을 시, 검색어를 필터링한 결과를 보낸다
       resultItemList = itemListFilterWithSearchWord(resultItemList, query.searchWord);
     }
@@ -201,8 +206,9 @@ export class ItemController {
     }
 
     const usersJoinedGroup = await this.joinerService.findWithUserCondition(userId); 
-    const usersLikerdGroup = await this.likerService.findWithUserCondition(userId);
-    let resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikerdGroup);
+    const usersLikedGroup = await this.likerService.findWithUserCondition(userId);
+    const usersGottedGroup = await this.gotterService.findWithUserCondition(userId);
+    let resultItemList = itemListFormatWithUsersJoinLikeGot(foundItemList, usersJoinedGroup, usersLikedGroup, usersGottedGroup);
     if(query.searchWord != null){ //  query에 searchWord가 포함되어 있을 시, 검색어를 필터링한 결과를 보낸다
       resultItemList = itemListFilterWithSearchWord(resultItemList, query.searchWord);
     }
@@ -232,15 +238,19 @@ export class ItemController {
       })
     }
     const usersOngoingGroup = await this.joinerService.findWithUserCondition(userId); //  유저가 참여한 적 있는 상품 목록 가져오기
-    const nowDate = new Date();
-    nowDate.setHours(0,0,0,0);
     const usersOngoingItemList = [];
-    for(let e of usersOngoingGroup){    //  날짜를 비교하여 마감이 아직 안 된 상품만 필터링
-      const candidateItem = await this.itemService.findOne(e.item.id);
-      if(candidateItem.dueDate >= nowDate){
-        usersOngoingItemList.push(candidateItem);
-      }
+    for(let e of usersOngoingGroup){
+      usersOngoingItemList.push(await this.itemService.findOne(e.item.id));
     }
+    // const nowDate = new Date();
+    // nowDate.setHours(0,0,0,0);
+    // const usersOngoingItemList = [];
+    // for(let e of usersOngoingGroup){    //  날짜를 비교하여 마감이 아직 안 된 상품만 필터링
+    //   const candidateItem = await this.itemService.findOne(e.item.id);
+    //   if(candidateItem.dueDate >= nowDate){
+    //     usersOngoingItemList.push(candidateItem);
+    //   }
+    // }
     // usersOngoingGroup.forEach(async (e)=>{    //  날짜를 비교하여 마감이 아직 안 된 상품만 필터링
     //   const candidateItem = await this.itemService.findOne(e.item.id);
     //   if(candidateItem.dueDate >= nowDate){
@@ -265,20 +275,24 @@ export class ItemController {
         statusMsg: '해당 ID의 회원은 존재하지 않습니다.'
       })
     }
-    const usersPrevGroup = await this.joinerService.findWithUserCondition(userId);  //  유저가 참여한 적 있는 상품 목록 가져오기
+    const usersPrevGroup = await this.gotterService.findWithUserCondition(userId);  //  유저가 참여한 적 있는 상품 목록 가져오기
     console.log(usersPrevGroup);
-    const nowDate = new Date();
-    nowDate.setHours(0,0,0,0);
     const usersPrevItemList = [];
     for (let e of usersPrevGroup){   //  날짜를 비교하여 마감이 이미 된 상품만 필터링
-      const candidateItem = await this.itemService.findOne(e.item.id);
-      console.log("dueDate");
-      console.log(candidateItem.dueDate);
-      if(candidateItem.dueDate < nowDate){
-        console.log(candidateItem);
-        usersPrevItemList.push(candidateItem);
-      }
+      usersPrevItemList.push(await this.itemService.findOne(e.item.id));
     }
+    // const nowDate = new Date();
+    // nowDate.setHours(0,0,0,0);
+    // const usersPrevItemList = [];
+    // for (let e of usersPrevGroup){   //  날짜를 비교하여 마감이 이미 된 상품만 필터링
+    //   const candidateItem = await this.itemService.findOne(e.item.id);
+    //   console.log("dueDate");
+    //   console.log(candidateItem.dueDate);
+    //   if(candidateItem.dueDate < nowDate){
+    //     console.log(candidateItem);
+    //     usersPrevItemList.push(candidateItem);
+    //   }
+    // }
     // usersPrevGroup.forEach(async (e)=>{   //  날짜를 비교하여 마감이 이미 된 상품만 필터링
     //   const candidateItem = await this.itemService.findOne(e.item.id);
     //   console.log("dueDate");
@@ -335,15 +349,20 @@ export class ItemController {
   
   @Get(':itemId')  ////  특정 ID의 아이템 세부정보 로딩
   async findOneItem(@Param('itemId') itemId: number, @Query() query): Promise<Item> {
-    // console.log('get item with id : '+ itemId+' considering user: '+query.userId);
+    console.log('get item with id : '+ itemId+' considering user: '+query.userId);
     const userId = query.userId;
     const item = await this.itemService.findOne(itemId);
-    // console.log(item);
+    console.log(item);
     const usersJoinedGroup = await this.joinerService.findWithUserCondition(userId); 
     const usersLikedGroup = await this.likerService.findWithUserCondition(userId);
+    console.log("userId ");
+    console.log(userId);
+    const usersGottedGroup = await this.gotterService.findWithUserCondition(userId);
+    console.log("USER'S GOTTED GROUP");
+    console.log(usersGottedGroup);
     const response = Object.assign({
       data: { 
-        ...itemFormatWithUserJoinLike(item, usersJoinedGroup, usersLikedGroup)
+        ...itemFormatWithUserJoinLikeGot(item, usersJoinedGroup, usersLikedGroup, usersGottedGroup)
       },
       statusCode: 200,
       statusMsg: `상품 조회가 성공적으로 완료되었습니다.`,
@@ -400,7 +419,7 @@ export class ItemController {
     let toggleUser;
     let nowJoined :boolean;
     const ifAlreadyJoined = await this.joinerService.findWithUserItemCondition(userId, itemId);
-    if(ifAlreadyJoined == null){
+    if(ifAlreadyJoined == null){  //  아직 참여한 적 없으면, 참여 처리
       const newJoin = new Joiner();
       newJoin.user = await this.userService.findOne(userId);
       newJoin.item = await this.itemService.findOne(itemId);
@@ -415,7 +434,61 @@ export class ItemController {
       toggleUser.budget -= toggleItem.salePrice;
       await this.itemService.saveItem(toggleItem);
       await this.userService.saveUser(toggleUser);
-    }else{
+
+      console.log("일단 공구참여는 시켰고, 이제 인원 확인할 거임. 이제 현재 인원 / 모집 인원 출력");
+      console.log(toggleItem.nowMan, toggleItem.minMan);
+
+
+      // 이렇게 참여 함으로써 상품의 공구 모집 인원이 꽉 찬다면, 공구를 완료 처리
+      if(toggleItem.nowMan >= toggleItem.minMan){
+        const completedJoinerList = await this.joinerService.findWithItemCondition(itemId);
+        console.log("이 상품에 참여한 Joiner 목록을 확인해보겟슴....");
+        console.log(completedJoinerList);
+
+        console.log("공구 마감 시작...");
+        for(let cJoiner of completedJoinerList){
+          const cUserId = cJoiner.user.id;
+          const cItemId = cJoiner.item.id;
+          console.log("공구 취소될 구매자 / 취소될 상품");
+          console.log(cUserId , cItemId);
+          console.log("삭제될 Joiner의 JoinerID");
+          console.log(cJoiner.id);
+          await this.joinerService.deleteJoiner(cJoiner.id);
+          console.log("해당 Joiner가 아직 남아있는지 확인");
+          console.log(await this.joinerService.findOne(cJoiner.id));
+          const newGotter = new Gotter();
+          newGotter.user = await this.userService.findOne(cUserId);
+          newGotter.item = await this.itemService.findOne(cItemId);
+          newGotter.usersRate = null;
+          await this.gotterService.saveGotter(newGotter);
+          console.log("새로운 Gotter");
+          console.log(newGotter);
+        }
+        nowJoined = false;
+        console.log("공구 마감 전 상품의 상태");
+        console.log(toggleItem);
+        toggleItem = await this.itemService.findOne(itemId);
+        toggleItem.nowMan = 0;
+        await this.itemService.saveItem(toggleItem);
+        console.log("공구 마감 후 상품의 상태");
+        console.log(toggleItem);
+        return Object.assign({
+          data: { userId,
+            itemId,
+            nowJoined  },
+          statusCode: 201,
+          statusMsg: `유저가 공구에 참여함으로써 공구가 마감되었습니다.`,
+        });
+      }
+      return Object.assign({
+        data: { userId,
+          itemId,
+          nowJoined  },
+        statusCode: 201,
+        statusMsg: `유저가 공구에 참여하였습니다. 원할 경우 참여 취소할 수 있습니다.`,
+      });
+
+    }else{          // 참여 했던 상품이면, 참여 취소 처리
       await this.joinerService.deleteJoiner(ifAlreadyJoined.id);
       toggleItem = await this.itemService.findOne(itemId);
       toggleUser = await this.userService.findOne(userId);
@@ -424,15 +497,59 @@ export class ItemController {
       toggleUser.budget += toggleItem.salePrice;
       await this.itemService.saveItem(toggleItem);
       await this.userService.saveUser(toggleUser);
+      return Object.assign({
+        data: { userId,
+          itemId,
+          nowJoined  },
+        statusCode: 201,
+        statusMsg: `유저가 공구에 참여 취소하였습니다. 원할 경우 재참여 가능합니다.`,
+      });
     }
     // await this.itemService.saveItem(toggleItem);
+  }
+
+  @Put('/rate/:itemId') //  유저가 이미 구매 완료한 전적이 있는 상품에 평점 남기기
+  async rateUsersGottedItem(@Param() param, @Query() query):Promise<void>{
+    const userId = query.userId;
+    const itemId = param.itemId;
+    const usersNewRate :number= parseInt(query.rate);
+    console.log("QUERY.RATE is : ");
+    console.log(query.rate);
+    console.log(typeof(query.rate));
+    let rateGotter = await this.gotterService.findWithUserItemCondition(userId, itemId);
+    if(rateGotter == null){ //  유저가 해당 상품을 구매한 전적이 없을 경우 평점 기록 불가
+      return Object.assign({
+      data:userId,
+      statusCode: 400,
+      statusMsg: '해당 ID의 회원은 해당 상품을 구매한 적이 없습니다.'
+    })
+    }
+    const rateItem = await this.itemService.findOne(itemId);
+    if(rateGotter.usersRate == null){
+      console.log(" 이 상품에 평점을 처음 남김");
+      rateItem.rate = (((rateItem.rate * rateItem.rateMan) + usersNewRate) / (rateItem.rateMan + 1));
+      console.log("갱신 연산 성공");
+      rateItem.rateMan += 1;
+      console.log("RATE NUM OF ITEM 갱신됨 ");
+      rateGotter.usersRate = usersNewRate;
+    }else{
+      console.log(" 이 상품에 평점을 남긴 적이 있으므로 기존 평점을 갱신하겠음");
+      rateItem.rate = (((rateItem.rate * rateItem.rateMan) - rateGotter.usersRate + usersNewRate) / rateItem.rateMan);
+      rateGotter.usersRate = usersNewRate;
+    }
+    console.log("rateItem save 직전");
+    console.log(rateItem);
+    await this.itemService.saveItem(rateItem);
+    console.log("rateItem save 직후");
+    await this.gotterService.saveGotter(rateGotter);
+    console.log("rateGottersave 직후");
+    const newAvgRate = rateItem.rate;
+    console.log("return 직전");
     return Object.assign({
-      data: { userId,
-        itemId,
-        nowJoined  },
-      statusCode: 201,
-      statusMsg: `유저의 참여여부 변경이 성공적으로 반영되었습니다.`,
-    });
+    data:{newAvgRate},
+    statusCode: 201,
+    statusMsg: '성공적으로 평점을 등록하였습니다.'
+  });
   }
 
   //임시로 아이템 추가하는 request

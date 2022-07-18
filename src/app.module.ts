@@ -8,6 +8,7 @@ import { Liker } from './domain/Liker';
 import { User } from './domain/User';
 import { ManageModule } from './manage.module';
 import { LoggerMiddleware } from './utils/logger.middleware';
+import { Gotter } from './domain/Gotter';
 
 
 @Module({
@@ -18,7 +19,7 @@ import { LoggerMiddleware } from './utils/logger.middleware';
     username: 'root',
     password: '',
     database: 'mcw3',
-    entities: [User, Item, Liker, Joiner],
+    entities: [User, Item, Liker, Joiner, Gotter],
     synchronize: true,
   }),
      ManageModule],
