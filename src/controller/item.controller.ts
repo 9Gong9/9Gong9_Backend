@@ -4,8 +4,8 @@ import { User } from '../domain/User';
 import { ItemService } from 'src/service/item.service';
 import { Item } from 'src/domain/Item';
 import { JoinerService } from 'src/service/Joiner.service';
-import { LikeService } from 'src/service/like.service';
-import { Like } from 'src/domain/Like';
+import { LikerService } from 'src/service/liker.service';
+import { Liker } from 'src/domain/Liker';
 import { Joiner } from 'src/domain/Joiner';
 import { getItemData, getRegionData } from 'src/utils/dataImporter';
 import { itemFormat, itemFormatWithUserJoinLike, itemListFilterWithSearchWord, itemListFormat, itemListFormatWithUsersJoinLike } from 'src/utils/dataFormater';
@@ -15,12 +15,12 @@ export class ItemController {
     private userService: UserService,
     private itemService: ItemService,
     private joinerService: JoinerService,
-    private likeService: LikeService
+    private likerService: LikerService
   ) {
     this.userService = userService;
     this.itemService = itemService;
     this.joinerService = joinerService;
-    this.likeService = likeService;
+    this.likerService = likerService;
   } 
 
   @Get('regionList')  //  대전광역시의 시군구 정보를 불러온다. 런칭된 앱에서는 쓸 일 없음
@@ -37,55 +37,78 @@ export class ItemController {
   async itemCrawlFetch():Promise<void>{
     const regionList = getRegionData();
     const siteList = [
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095739","과일"],
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095740","채소"],
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095498","쌀/잡곡/견과"],
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095499","정육/계란류"],
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095500","수산물/건해산"],
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095501","우유/유제품/유아식"],
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095502","냉장/냉동/간편식"],
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095507","생수/음료/주류"],
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095503","밀키트/김치/반찬"],
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095508","커피/원두/차"],
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095504","라면/면류/즉석식품/통조림"],
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095509","장류/양념/가루/오일"],
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095505","과자/시리얼/빙과/떡"],
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095506","베이커리/잼/샐러드"],
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095510","건강식품"],
-      // ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095511","친환경/유기농"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095739","과일"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095740","채소"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095498","쌀/잡곡/견과"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095499","정육/계란류"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095500","수산물/건해산"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095501","우유/유제품/유아식"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095502","냉장/냉동/간편식"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095507","생수/음료/주류"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095503","밀키트/김치/반찬"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095508","커피/원두/차"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095504","라면/면류/즉석식품/통조림"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095509","장류/양념/가루/오일"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095505","과자/시리얼/빙과/떡"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095506","베이커리/잼/샐러드"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095510","건강식품"],
+      ["https://emart.ssg.com/category/main.ssg?dispCtgId=6000095511","친환경/유기농"],
     ];
-    siteList.forEach(async (e)=>{
-      const url = e[0];
-      const category = e[1];
+    for(let ele of siteList){
+      await setTimeout(()=>console.log("waiting..."), 500);
+      const url = ele[0];
+      const category = ele[1];
       const data = await getItemData(url);
       for(let state in regionList){
         for(let area in regionList[state]){
           for(let town in regionList[state][area]){
-            data.forEach(async (e)=>{
+            for(let element of data){
               const item: Item = new Item();
               const nowDate = new Date();
-              item.name = e.name;
-              item.rate = e.rate;
-              item.orgPrice = e.orgPrice;
-              item.salePrice = e.salePrice;
+              item.name = element.name;
+              item.rate = element.rate;
+              item.orgPrice = element.orgPrice;
+              item.salePrice = element.salePrice;
               item.minMan = Math.floor(Math.random()*10);
               item.nowMan = 0;
               nowDate.setDate(nowDate.getDate() + Math.floor(Math.random()*10));
               nowDate.setHours(0,0,0,0);  //  we don't need hh:mm:ss:msms info in this app
               item.dueDate = nowDate;
-              item.imgUrl = e.imgUrl;
+              item.imgUrl = element.imgUrl;
               item.category = category;
               item.state = state;
               item.area = area;
               item.town = regionList[state][area][town];
               await this.itemService.saveItem(item);
-            })
+            }
+            // data.forEach(async (e)=>{
+            //   const item: Item = new Item();
+            //   const nowDate = new Date();
+            //   item.name = e.name;
+            //   item.rate = e.rate;
+            //   item.orgPrice = e.orgPrice;
+            //   item.salePrice = e.salePrice;
+            //   item.minMan = Math.floor(Math.random()*10);
+            //   item.nowMan = 0;
+            //   nowDate.setDate(nowDate.getDate() + Math.floor(Math.random()*10));
+            //   nowDate.setHours(0,0,0,0);  //  we don't need hh:mm:ss:msms info in this app
+            //   item.dueDate = nowDate;
+            //   item.imgUrl = e.imgUrl;
+            //   item.category = category;
+            //   item.state = state;
+            //   item.area = area;
+            //   item.town = regionList[state][area][town];
+            //   await this.itemService.saveItem(item);
+            //   await setTimeout(()=>console.log("waiting..."), 2000);
+            // })
           }
         }
       }
       console.log("Done!");
       await setTimeout(()=>{return}, 10000);
-    })
+    }
+    // siteList.forEach(async (e)=>{
+    // })
   }
 
   @Get('list')  ////  지역고려X 모든 상품 내역을 불러온다. 런칭된 앱에서는 쓸 일 없음
@@ -131,8 +154,8 @@ export class ItemController {
     }
 
     const usersJoinedGroup = await this.joinerService.findWithUserCondition(userId); 
-    const usersLikedGroup = await this.likeService.findWithUserCondition(userId);
-    let resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikedGroup);
+    const usersLikerdGroup = await this.likerService.findWithUserCondition(userId);
+    let resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikerdGroup);
     if(query.searchWord != null){ //  query에 searchWord가 포함되어 있을 시, 검색어를 필터링한 결과를 보낸다
       resultItemList = itemListFilterWithSearchWord(resultItemList, query.searchWord);
     }
@@ -178,8 +201,8 @@ export class ItemController {
     }
 
     const usersJoinedGroup = await this.joinerService.findWithUserCondition(userId); 
-    const usersLikedGroup = await this.likeService.findWithUserCondition(userId);
-    let resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikedGroup);
+    const usersLikerdGroup = await this.likerService.findWithUserCondition(userId);
+    let resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikerdGroup);
     if(query.searchWord != null){ //  query에 searchWord가 포함되어 있을 시, 검색어를 필터링한 결과를 보낸다
       resultItemList = itemListFilterWithSearchWord(resultItemList, query.searchWord);
     }
@@ -276,7 +299,7 @@ export class ItemController {
     return response;
   }
 
-  @Get('/list/:userId/likes') //  유저가 관심있는 목록을 조회
+  @Get('/list/:userId/likers') //  유저가 관심있는 목록을 조회
   async findLikedItems(@Param('userId') userId: string):Promise<Item[]>{
     if(await this.userService.findOne(userId) == null){
       return Object.assign({
@@ -285,7 +308,7 @@ export class ItemController {
         statusMsg: '해당 ID의 회원은 존재하지 않습니다.'
       })
     }
-    const usersLikedGroup : Like[]= await this.likeService.findWithUserCondition(userId);
+    const usersLikedGroup : Liker[]= await this.likerService.findWithUserCondition(userId);
     const nowDate = new Date();
     nowDate.setHours(0,0,0,0);
     const usersLikedItemList = [];
@@ -317,7 +340,7 @@ export class ItemController {
     const item = await this.itemService.findOne(itemId);
     // console.log(item);
     const usersJoinedGroup = await this.joinerService.findWithUserCondition(userId); 
-    const usersLikedGroup = await this.likeService.findWithUserCondition(userId);
+    const usersLikedGroup = await this.likerService.findWithUserCondition(userId);
     const response = Object.assign({
       data: { 
         ...itemFormatWithUserJoinLike(item, usersJoinedGroup, usersLikedGroup)
@@ -330,7 +353,7 @@ export class ItemController {
     return response;
   }
 
-  @Put('/like/:userId/:itemId') //  유저가 상품에 누른 좋아요(관심)의 toggle
+  @Put('/liker/:userId/:itemId') //  유저가 상품에 누른 좋아요(관심)의 toggle
   async toggleUsersLikeItem(@Param() param):Promise<void>{
     const userId = param.userId;
     const itemId = param.itemId;
@@ -342,19 +365,19 @@ export class ItemController {
       })
     }
     let nowLiked :boolean;
-    const ifAlreadyLiked = await this.likeService.findWithUserItemCondition(userId, itemId);
+    const ifAlreadyLiked = await this.likerService.findWithUserItemCondition(userId, itemId);
     if(ifAlreadyLiked == null){
       console.log("원래는 좋아요 안 돼 있었으므로 좋아요 하겠음!!!");
       console.log(ifAlreadyLiked);
-      const newLike = new Like();
-      newLike.user = await this.userService.findOne(userId);
-      newLike.item = await this.itemService.findOne(itemId);
-      await this.likeService.saveLike(newLike);
+      const newLiker = new Liker();
+      newLiker.user = await this.userService.findOne(userId);
+      newLiker.item = await this.itemService.findOne(itemId);
+      await this.likerService.saveLiker(newLiker);
       nowLiked = true;
     }else{
       console.log("이미 좋아요 있으므로 취소 하겠음!!!");
       console.log(ifAlreadyLiked);
-      await this.likeService.deleteLike(ifAlreadyLiked.id);
+      await this.likerService.deleteLiker(ifAlreadyLiked.id);
       nowLiked = false;
     }
     const response = Object.assign({

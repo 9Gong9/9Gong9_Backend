@@ -4,7 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Joiner } from './domain/Joiner';
 import { Item } from './domain/Item';
-import { Like } from './domain/Like';
+import { Liker } from './domain/Liker';
 import { User } from './domain/User';
 import { ManageModule } from './manage.module';
 import { LoggerMiddleware } from './utils/logger.middleware';
@@ -18,7 +18,7 @@ import { LoggerMiddleware } from './utils/logger.middleware';
     username: 'root',
     password: '',
     database: 'mcw3',
-    entities: [User, Item, Like, Joiner],
+    entities: [User, Item, Liker, Joiner],
     synchronize: true,
   }),
      ManageModule],

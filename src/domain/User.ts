@@ -1,6 +1,6 @@
 import { BaseEntity, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn, Unique } from 'typeorm/index';
 import { Joiner } from './Joiner';
-import { Like } from './Like';
+import { Liker } from './Liker';
 @Entity()
 
 @Unique(['id'])
@@ -30,11 +30,11 @@ export class User extends BaseEntity{
   defTown: string;
 
   //  One To Many References
-  @OneToMany(type=>Like, like => like.user, {
+  @OneToMany(type=>Liker, liker => liker.user, {
     onDelete:'CASCADE',
     eager: true
   })
-  likes: Like[];
+  likers: Liker[];
   @OneToMany(type=>Joiner, joiner => joiner.user, {
     onDelete:'CASCADE',
     eager: true

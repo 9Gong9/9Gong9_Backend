@@ -1,6 +1,6 @@
 import { Item } from "src/domain/Item";
 import { Joiner } from "src/domain/Joiner";
-import { Like } from "src/domain/Like";
+import { Liker } from "src/domain/Liker";
 import { User } from "src/domain/User";
 
 export function userGen(id:string, pw:string, name: string, iskakao:boolean):User{
@@ -36,7 +36,7 @@ export function itemListFormat(itemList: Item[]):object[]{
       state:e.state,
       area:e.area,
       town:e.town,
-      likes:e.likes,
+      likes:e.likers,
       joiners:e.joiners
     }
   });
@@ -60,13 +60,13 @@ export function itemFormat(e: Item):object{
     state:e.state,
     area:e.area,
     town:e.town,
-    likes:e.likes,
+    likes:e.likers,
     joiners:e.joiners
   };
   return resultItem;
 }
 
-export function itemListFormatWithUsersJoinLike(itemList:Item[], joinedList:Joiner[], likedList:Like[]):object[]{
+export function itemListFormatWithUsersJoinLike(itemList:Item[], joinedList:Joiner[], likedList:Liker[]):object[]{
   const joinedIdList = joinedList.map((e)=>{
     return e.item.id;
   });
@@ -90,7 +90,7 @@ export function itemListFormatWithUsersJoinLike(itemList:Item[], joinedList:Join
       state:e.state,
       area:e.area,
       town:e.town,
-      likes:e.likes,
+      likes:e.likers,
       joiners:e.joiners,
       userJoinedIt: false,
       userLikedIt: false,
@@ -106,7 +106,7 @@ export function itemListFormatWithUsersJoinLike(itemList:Item[], joinedList:Join
   return resultItemList;
   };
 
-  export function itemFormatWithUserJoinLike(e: Item, joinedList:Joiner[], likedList:Like[]):object{
+  export function itemFormatWithUserJoinLike(e: Item, joinedList:Joiner[], likedList:Liker[]):object{
     const joinedIdList = joinedList.map((e)=>{
       return e.item.id;
     });
@@ -133,7 +133,7 @@ export function itemListFormatWithUsersJoinLike(itemList:Item[], joinedList:Join
       state:e.state,
       area:e.area,
       town:e.town,
-      likes:e.likes,
+      likes:e.likers,
       joiners:e.joiners,
       userJoinedIt: false,
       userLikedIt: false,

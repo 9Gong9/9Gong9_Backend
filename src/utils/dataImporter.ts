@@ -131,7 +131,7 @@ export async function getItemData(url : string){
       if(isNaN(e.orgPrice)){
         console.log("NaN!");
         noNaNCount ++;
-        e.orgPrice = e.salePrice + Math.floor(Math.random()*e.salePrice*0.5);
+        e.orgPrice = Math.floor((((Math.random()*0.5)+1)*e.salePrice)/1000)*1000;
       }
     })
 

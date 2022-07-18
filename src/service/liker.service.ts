@@ -4,40 +4,40 @@ import { User } from '../domain/User';
 import { Connection, Repository } from 'typeorm/index';
 import { Item } from '../domain/Item';
 import { Joiner } from 'src/domain/Joiner';
-import { Like } from 'src/domain/Like';
+import { Liker } from 'src/domain/Liker';
 
 @Injectable()
-export class LikeService {
+export class LikerService {
   constructor(
     @InjectRepository(Item) private itemRepository: Repository<Item>,
     @InjectRepository(Joiner) private joinerRepository: Repository<Joiner>,
-    @InjectRepository(Like) private likeRepository: Repository<Like>,
+    @InjectRepository(Liker) private likerRepository: Repository<Liker>,
     // private connection: Connection
   ) {
     // this.connection = connection;
     this.itemRepository = itemRepository;
     this.joinerRepository = joinerRepository;
-    this.likeRepository = likeRepository;
+    this.likerRepository = likerRepository;
   }
   /**
    * User 리스트 조회
    */
-   async findAll(): Promise<Like[]> {
-    return this.likeRepository.find();
+   async findAll(): Promise<Liker[]> {
+    return this.likerRepository.find();
   }
   /**
    * 특정 유저 조회
    * @param id
    */
-  async findOne(id: number): Promise<Like> {
-    return this.likeRepository.findOne({ where:{
+  async findOne(id: number): Promise<Liker> {
+    return this.likerRepository.findOne({ where:{
       id: id
     } });
   }
 
   //  유저가 속한 그룹들을 가져옴
-  async findWithUserCondition(userId: string): Promise<Like[]> {
-    return await this.likeRepository.find(
+  async findWithUserCondition(userId: string): Promise<Liker[]> {
+    return await this.likerRepository.find(
       {
         loadRelationIds: {
           relations: [
@@ -53,8 +53,8 @@ export class LikeService {
     )
   }
   
-  async findWithUserItemCondition(userId: string, itemId: number): Promise<Like>{
-    return await this.likeRepository.findOne(
+  async findWithUserItemCondition(userId: string, itemId: number): Promise<Liker>{
+    return await this.likerRepository.findOne(
       {
         loadRelationIds: {
           relations: [
@@ -75,14 +75,14 @@ export class LikeService {
    * 유저 저장
    * @param user
    */
-  async saveLike(Like : Like): Promise<void> {
-    await this.likeRepository.save(Like);
+  async saveLiker(Liker : Liker): Promise<void> {
+    await this.likerRepository.save(Liker);
   }
   /**
    * 유저 삭제
    */
-  async deleteLike(id: number): Promise<void> {
-    await this.likeRepository.delete({ id: id });
+  async deleteLiker(id: number): Promise<void> {
+    await this.likerRepository.delete({ id: id });
   }
 
 }

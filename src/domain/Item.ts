@@ -2,7 +2,7 @@ import { group } from 'console';
 import { BaseEntity, Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn, Unique } from 'typeorm/index';
 import { Url } from 'url';
 import { Joiner } from './Joiner';
-import { Like } from './Like';
+import { Liker } from './Liker';
 @Entity()
 
 @Unique(['id'])
@@ -35,11 +35,11 @@ export class Item extends BaseEntity{
   town: string;
 
   //   One To Many References
-  @OneToMany(type=>Like, like => like.item, {
+  @OneToMany(type=>Liker, liker => liker.item, {
     onDelete:'CASCADE',
     eager: true
   })
-  likes: Like[];
+  likers: Liker[];
   @OneToMany(type=>Joiner, joiner => joiner.item, {
     onDelete:'CASCADE',
     eager: true

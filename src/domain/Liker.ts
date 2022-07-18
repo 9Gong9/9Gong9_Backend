@@ -4,15 +4,15 @@ import { User } from './User';
 @Entity()
 
 @Unique(['user', 'item'])
-export class Like extends BaseEntity{
+export class Liker extends BaseEntity{
   @PrimaryGeneratedColumn()
   id: number;
 
   //   Many To One References
-  @ManyToOne(type => User, user => user.likes)
+  @ManyToOne(type => User, user => user.likers)
   @JoinColumn({name: 'ref_userId'})
   user: User;
-  @ManyToOne(type => Item, item => item.likes)
+  @ManyToOne(type => Item, item => item.likers)
   @JoinColumn({name: 'ref_itemId'})
   item: Item;
 }
