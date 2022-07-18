@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res } from '@nestjs/common';
 import { UserService } from '../service/user.service';
 import { User } from '../domain/User';
 import { ItemService } from 'src/service/item.service';
@@ -8,7 +8,7 @@ import { LikeService } from 'src/service/like.service';
 import { Like } from 'src/domain/Like';
 import { Joiner } from 'src/domain/Joiner';
 import { getItemData, getRegionData } from 'src/utils/dataImporter';
-import { itemFormat, itemListFormat, itemListFormatWithUsersJoinLike } from 'src/utils/dataFormater';
+import { itemFormat, itemFormatWithUserJoinLike, itemListFormat, itemListFormatWithUsersJoinLike } from 'src/utils/dataFormater';
 @Controller('item')
 export class ItemController {
   constructor(
@@ -131,7 +131,7 @@ export class ItemController {
     }
 
     const usersJoinedGroup = await this.joinerService.findWithUserCondition(userId); 
-    const usersLikedGroup = await this.joinerService.findWithUserCondition(userId);
+    const usersLikedGroup = await this.likeService.findWithUserCondition(userId);
     const resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikedGroup);
 
     let foundNameList : string[] = [];  //  검색어자동완성 기능을 위한 NAME LIST 동봉 반환
@@ -171,7 +171,7 @@ export class ItemController {
     }
 
     const usersJoinedGroup = await this.joinerService.findWithUserCondition(userId); 
-    const usersLikedGroup = await this.joinerService.findWithUserCondition(userId);
+    const usersLikedGroup = await this.likeService.findWithUserCondition(userId);
     const resultItemList = itemListFormatWithUsersJoinLike(foundItemList, usersJoinedGroup, usersLikedGroup);
 
     let foundNameList : string[] = [];  //  검색어자동완성 기능을 위한 NAME LIST 동봉 반환
@@ -301,17 +301,23 @@ export class ItemController {
   }
   
   @Get(':itemId')  ////  특정 ID의 아이템 세부정보 로딩
-  async findOneItem(@Param('itemId') itemId: number): Promise<Item> {
-    console.log('get item with id : '+ itemId);
+  async findOneItem(@Param('itemId') itemId: number, @Query() query): Promise<Item> {
+    // console.log('get item with id : '+ itemId+' considering user: '+query.userId);
+    const userId = query.userId;
     const item = await this.itemService.findOne(itemId);
-    console.log(item);
-    return Object.assign({
+    // console.log(item);
+    const usersJoinedGroup = await this.joinerService.findWithUserCondition(userId); 
+    const usersLikedGroup = await this.likeService.findWithUserCondition(userId);
+    const response = Object.assign({
       data: { 
-        ...itemFormat(item)
+        ...itemFormatWithUserJoinLike(item, usersJoinedGroup, usersLikedGroup)
       },
       statusCode: 200,
       statusMsg: `상품 조회가 성공적으로 완료되었습니다.`,
     });
+    // console.log(response);
+
+    return response;
   }
 
   @Put('/like/:userId/:itemId') //  유저가 상품에 누른 좋아요(관심)의 toggle
@@ -328,22 +334,29 @@ export class ItemController {
     let nowLiked :boolean;
     const ifAlreadyLiked = await this.likeService.findWithUserItemCondition(userId, itemId);
     if(ifAlreadyLiked == null){
+      console.log("원래는 좋아요 안 돼 있었으므로 좋아요 하겠음!!!");
+      console.log(ifAlreadyLiked);
       const newLike = new Like();
       newLike.user = await this.userService.findOne(userId);
       newLike.item = await this.itemService.findOne(itemId);
       await this.likeService.saveLike(newLike);
       nowLiked = true;
     }else{
+      console.log("이미 좋아요 있으므로 취소 하겠음!!!");
+      console.log(ifAlreadyLiked);
       await this.likeService.deleteLike(ifAlreadyLiked.id);
       nowLiked = false;
     }
-    return Object.assign({
+    const response = Object.assign({
       data: { userId,
         itemId,
         nowLiked  },
       statusCode: 201,
       statusMsg: `유저의 관심여부 변경이 성공적으로 반영되었습니다.`,
     });
+    console.log("RESPONSE :");
+    console.log(response);
+    return response;
   }
 
   @Put('/join/:userId/:itemId') //  유저의 상품에 대한 참여여부의 toggle
