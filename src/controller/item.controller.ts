@@ -475,7 +475,8 @@ export class ItemController {
         return Object.assign({
           data: { userId,
             itemId,
-            nowJoined  },
+            nowJoined,
+          nowBudget:toggleUser.budget,  },
           statusCode: 201,
           statusMsg: `유저가 공구에 참여함으로써 공구가 마감되었습니다.`,
         });
@@ -483,7 +484,8 @@ export class ItemController {
       return Object.assign({
         data: { userId,
           itemId,
-          nowJoined  },
+          nowJoined,
+          nowBudget:toggleUser.budget,  },
         statusCode: 201,
         statusMsg: `유저가 공구에 참여하였습니다. 원할 경우 참여 취소할 수 있습니다.`,
       });
@@ -500,7 +502,8 @@ export class ItemController {
       return Object.assign({
         data: { userId,
           itemId,
-          nowJoined  },
+          nowJoined,
+          nowBudget:toggleUser.budget,  },
         statusCode: 201,
         statusMsg: `유저가 공구에 참여 취소하였습니다. 원할 경우 재참여 가능합니다.`,
       });
@@ -512,10 +515,13 @@ export class ItemController {
   async rateUsersGottedItem(@Param() param, @Query() query):Promise<void>{
     const userId = query.userId;
     const itemId = param.itemId;
-    const usersNewRate :number= parseInt(query.rate);
+    const usersNewRate :number= parseFloat(query.rate);
     console.log("QUERY.RATE is : ");
     console.log(query.rate);
     console.log(typeof(query.rate));
+    console.log("USERNEWRATE : ");
+    console.log(usersNewRate);
+    console.log(typeof(usersNewRate));
     let rateGotter = await this.gotterService.findWithUserItemCondition(userId, itemId);
     if(rateGotter == null){ //  유저가 해당 상품을 구매한 전적이 없을 경우 평점 기록 불가
       return Object.assign({
@@ -525,10 +531,14 @@ export class ItemController {
     })
     }
     const rateItem = await this.itemService.findOne(itemId);
+    console.log("상품의 기존 정보");
+    console.log(rateItem);
+    console.log("-----------------------------------------------------");
     if(rateGotter.usersRate == null){
       console.log(" 이 상품에 평점을 처음 남김");
       rateItem.rate = (((rateItem.rate * rateItem.rateMan) + usersNewRate) / (rateItem.rateMan + 1));
       console.log("갱신 연산 성공");
+      console.log(rateItem.rate);
       rateItem.rateMan += 1;
       console.log("RATE NUM OF ITEM 갱신됨 ");
       rateGotter.usersRate = usersNewRate;
@@ -536,12 +546,16 @@ export class ItemController {
       console.log(" 이 상품에 평점을 남긴 적이 있으므로 기존 평점을 갱신하겠음");
       rateItem.rate = (((rateItem.rate * rateItem.rateMan) - rateGotter.usersRate + usersNewRate) / rateItem.rateMan);
       rateGotter.usersRate = usersNewRate;
+      console.log("NEW USERS RATE");
+      console.log(rateItem.rate);
     }
     console.log("rateItem save 직전");
     console.log(rateItem);
     await this.itemService.saveItem(rateItem);
     console.log("rateItem save 직후");
+    console.log(rateItem);
     await this.gotterService.saveGotter(rateGotter);
+    console.log(rateGotter);
     console.log("rateGottersave 직후");
     const newAvgRate = rateItem.rate;
     console.log("return 직전");
