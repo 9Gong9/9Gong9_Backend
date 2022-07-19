@@ -48,6 +48,24 @@ export class GotterService {
       }
     )
   }
+
+  //  과거에 아이템을 구매한 사람들의 정보가 담긴 Gotter들을 불러옴
+  async findWithItemCondition(itemId: number): Promise<Gotter[]> {
+    return await this.gotterRepository.find(
+      {
+        loadRelationIds: {
+          relations: [
+            'user',
+            'item'
+          ],
+          disableMixedMap: true
+        },
+        where: {
+          item : {id: itemId}
+        }
+      }
+    )
+  }
   
   async findWithUserItemCondition(userId: string, itemId: number): Promise<Gotter>{
     return await this.gotterRepository.findOne(

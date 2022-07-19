@@ -179,3 +179,22 @@ export function itemListFormatWithUsersJoinLikeGot(itemList:Item[], joinedList:J
     });
     return resultItemList;
   }
+
+  export function gotterListFormat(gotterList: Gotter[]):object[]{
+    console.log("여기부터 gotterListFormat 함수!");
+    const resultReviewList = gotterList.map((e)=>{
+      const date = e.reviewDate;
+      const newDueDate = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+      return {
+        id:e.id,
+        userId:e.user.id,
+        usersRate: e.usersRate,
+        usersReview: e.usersReview,
+        usersReviewDate : newDueDate,
+      }
+    });
+    console.log("포맷팅 후 resultReviewList : ");
+    console.log(resultReviewList);
+    console.log("여기까지 gotterListFormat 함수!");
+    return resultReviewList;
+  }

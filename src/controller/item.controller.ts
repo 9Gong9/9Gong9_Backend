@@ -8,7 +8,7 @@ import { LikerService } from 'src/service/liker.service';
 import { Liker } from 'src/domain/Liker';
 import { Joiner } from 'src/domain/Joiner';
 import { getItemData, getRegionData } from 'src/utils/dataImporter';
-import { itemFormat, itemFormatWithUserJoinLikeGot, itemListFilterWithSearchWord, itemListFormat, itemListFormatWithUsersJoinLikeGot } from 'src/utils/dataFormater';
+import { gotterListFormat, itemFormat, itemFormatWithUserJoinLikeGot, itemListFilterWithSearchWord, itemListFormat, itemListFormatWithUsersJoinLikeGot } from 'src/utils/dataFormater';
 import { GotterService } from 'src/service/gotter.service';
 import { Gotter } from 'src/domain/Gotter';
 @Controller('item')
@@ -115,7 +115,7 @@ export class ItemController {
     // })
   }
 
-  @Get('list')  ////  지역고려X 모든 상품 내역을 불러온다. 런칭된 앱에서는 쓸 일 없음
+  @Get('list')                                                                      ////  지역고려X 모든 상품 내역을 불러온다. 런칭된 앱에서는 쓸 일 없음
   async findAll(): Promise<Item[]> {
     console.log('get item list');
     const itemList = await this.itemService.findAll();
@@ -132,11 +132,13 @@ export class ItemController {
     const usersOngoingGroup = await this.joinerService.findWithUserCondition("jina0202"); 
   }
 
-  
+
+  /////////////////////////////////////////////////////////////////////////////
   /* 여기서부터 메인  비즈니스 로직. 위에는 앱에서 보낼 일이 없는 Req 이다. */
+  ////////////////////////////////////////////////////////////////////////////
 
 
-  @Get('list/:state/:area/:town')  //  선택된 지역의 모든 상품 조회, 상품명 리스트와 함께 반환
+  @Get('list/:state/:area/:town')                                                                //  선택된 지역의 모든 상품 조회, 상품명 리스트와 함께 반환
   async findOne(@Param() param, @Body() body, @Query() query): Promise<Item[]> {
     const {state, area, town} = param;
     const userId = body.userId;
@@ -184,7 +186,7 @@ export class ItemController {
     });
   }
 
-  @Get('list/:state/:area/:town/:category')  //  선택된 지역의 특정 품목 모든 상품 조회, 상품명 리스트와 함께 반환
+  @Get('list/:state/:area/:town/:category')                                              //  선택된 지역의 특정 품목 모든 상품 조회, 상품명 리스트와 함께 반환
   async findWithRegionCategory(@Param() param, @Body() body, @Query() query): Promise<Item[]> {
     const {state, area, town, category} = param;
     const userId = body.userId;
@@ -228,7 +230,7 @@ export class ItemController {
     });
   }
 
-  @Get('/list/:userId/ongoing') //  현재 유저가 참여중인 ongoing 상품을 조회
+  @Get('/list/:userId/ongoing')                                                                       //  현재 유저가 참여중인 ongoing 상품을 조회
   async findUsersOngoingItems(@Param('userId') userId: string):Promise<Item[]>{
     if(await this.userService.findOne(userId) == null){
       return Object.assign({
@@ -266,7 +268,7 @@ export class ItemController {
   }
 
   
-  @Get('/list/:userId/previous') //  유저가 참여했던 상품목록을 조회
+  @Get('/list/:userId/previous')                                                                      //  유저가 참여했던 상품목록을 조회
   async findUsersPreviousItems(@Param('userId') userId: string):Promise<Item[]>{
     if(await this.userService.findOne(userId) == null){
       return Object.assign({
@@ -313,7 +315,7 @@ export class ItemController {
     return response;
   }
 
-  @Get('/list/:userId/likers') //  유저가 관심있는 목록을 조회
+  @Get('/list/:userId/likers')                                                                          //  유저가 관심있는 목록을 조회
   async findLikedItems(@Param('userId') userId: string):Promise<Item[]>{
     if(await this.userService.findOne(userId) == null){
       return Object.assign({
@@ -346,8 +348,47 @@ export class ItemController {
       statusMsg: `유저의 관심 목록이 성공적으로 조회되었습니다.`,
     });
   }
+
+  @Get('/list/:itemId/reviews')                                                                           //  상품에 달린 평점 및 리뷰의 목록을 조회
+  async findItemReviews(@Param('itemId') itemId: number):Promise<void>{
+    if(await this.itemService.findOne(itemId) == null){
+      return Object.assign({
+        data:itemId,
+        statusCode: 400,
+        statusMsg: '해당 ID의 상품은 존재하지 않습니다.'
+      })
+    }
+    let itemsGotterGroup : Gotter[]= await this.gotterService.findWithItemCondition(itemId);
+    console.log("해당 상품의 구매이력 GOTTERLIST : ");
+    console.log(itemsGotterGroup);
+    const filteredGotterGroup = itemsGotterGroup.filter((e)=> {
+      if(e.usersRate == null){
+        console.log("아래의 Gotter는 rate : null 이라서 거르겠음!");
+        console.log(e);
+        return false;
+      }else{
+        console.log("아래의 Gotter는 rate 값 존재해서 포함하겠음!");
+        console.log(e);
+        return true;
+      }
+    });
+
+    console.log("필터링 후 GotterList : ");
+    console.log(filteredGotterGroup);
+    const sortedGotterList = filteredGotterGroup.sort((a,b)=>((a.reviewDate < b.reviewDate)? 1:-1));
+    console.log("날짜 내림차순 정렬 후 GotterList : ");
+    console.log(sortedGotterList);
+    console.log("데이터 포매팅 시작...");
+    const resultReviewList = gotterListFormat(sortedGotterList);
+    console.log("response로 보낼 준비(포맷팅) 완료");
+    return Object.assign({
+      data: { itemReviews:resultReviewList },
+      statusCode: 200,
+      statusMsg: `상품의 리뷰 목록이 성공적으로 조회되었습니다.`,
+    });
+  }
   
-  @Get(':itemId')  ////  특정 ID의 아이템 세부정보 로딩
+  @Get(':itemId')                                                                                           ////  특정 ID의 아이템 세부정보 로딩
   async findOneItem(@Param('itemId') itemId: number, @Query() query): Promise<Item> {
     console.log('get item with id : '+ itemId+' considering user: '+query.userId);
     const userId = query.userId;
@@ -372,7 +413,7 @@ export class ItemController {
     return response;
   }
 
-  @Put('/liker/:userId/:itemId') //  유저가 상품에 누른 좋아요(관심)의 toggle
+  @Put('/liker/:userId/:itemId')                                                                           //  유저가 상품에 누른 좋아요(관심)의 toggle
   async toggleUsersLikeItem(@Param() param):Promise<void>{
     const userId = param.userId;
     const itemId = param.itemId;
@@ -411,7 +452,7 @@ export class ItemController {
     return response;
   }
 
-  @Put('/join/:userId/:itemId') //  유저의 상품에 대한 참여여부의 toggle
+  @Put('/join/:userId/:itemId')                                                                           //  유저의 상품에 대한 참여여부의 toggle
   async toggleUsersJoinItem(@Param() param):Promise<void>{
     const userId = param.userId;
     const itemId = param.itemId;
@@ -478,7 +519,7 @@ export class ItemController {
             nowJoined,
           nowBudget:toggleUser.budget,  },
           statusCode: 201,
-          statusMsg: `유저가 공구에 참여함으로써 공구가 마감되었습니다.`,
+          statusMsg: `유저가 공구에 참여함으로써 공구가 마감되었습니다. 상품은 다시 nowMan = 0 이 됩니다.`,
         });
       }
       return Object.assign({
@@ -511,52 +552,64 @@ export class ItemController {
     // await this.itemService.saveItem(toggleItem);
   }
 
-  @Put('/rate/:itemId') //  유저가 이미 구매 완료한 전적이 있는 상품에 평점 남기기
+  @Put('/rate/:itemId')                                                                            //  유저가 이미 구매 완료한 전적이 있는 상품에 평점 남기기
   async rateUsersGottedItem(@Param() param, @Query() query):Promise<void>{
     const userId = query.userId;
     const itemId = param.itemId;
     const usersNewRate :number= parseFloat(query.rate);
+    const usersNewReview : string = query.review;
     console.log("QUERY.RATE is : ");
     console.log(query.rate);
     console.log(typeof(query.rate));
-    console.log("USERNEWRATE : ");
+    console.log("USER'SNEWRATE : ");
     console.log(usersNewRate);
     console.log(typeof(usersNewRate));
-    let rateGotter = await this.gotterService.findWithUserItemCondition(userId, itemId);
+    console.log("USER's NEW REVIEW : ");
+    console.log(usersNewReview);
+
+    let rateGotter = await this.gotterService.findWithUserItemCondition(userId, itemId);  //  유저가 해당 상품을 공구 완료했는지 gotter를 조회
     if(rateGotter == null){ //  유저가 해당 상품을 구매한 전적이 없을 경우 평점 기록 불가
       return Object.assign({
       data:userId,
       statusCode: 400,
       statusMsg: '해당 ID의 회원은 해당 상품을 구매한 적이 없습니다.'
-    })
-    }
+    })}
+
     const rateItem = await this.itemService.findOne(itemId);
     console.log("상품의 기존 정보");
     console.log(rateItem);
     console.log("-----------------------------------------------------");
+
     if(rateGotter.usersRate == null){
       console.log(" 이 상품에 평점을 처음 남김");
       rateItem.rate = (((rateItem.rate * rateItem.rateMan) + usersNewRate) / (rateItem.rateMan + 1));
-      console.log("갱신 연산 성공");
+      console.log("갱신 연산 성공, 새로운 평균 rate: ");
       console.log(rateItem.rate);
       rateItem.rateMan += 1;
-      console.log("RATE NUM OF ITEM 갱신됨 ");
+      console.log("RATE NUM OF ITEM 갱신됨.");
       rateGotter.usersRate = usersNewRate;
+      rateGotter.usersReview = usersNewReview;
+      rateGotter.reviewDate = new Date();
     }else{
       console.log(" 이 상품에 평점을 남긴 적이 있으므로 기존 평점을 갱신하겠음");
       rateItem.rate = (((rateItem.rate * rateItem.rateMan) - rateGotter.usersRate + usersNewRate) / rateItem.rateMan);
       rateGotter.usersRate = usersNewRate;
-      console.log("NEW USERS RATE");
+      rateGotter.usersReview = usersNewReview;
+      rateGotter.reviewDate = new Date();
+      console.log("rateMan은 유지! 갱신 연산 성공, 새로운 평균 rate: ");
       console.log(rateItem.rate);
     }
-    console.log("rateItem save 직전");
+
+    console.log("rateItem save 직전! rateItem 내용 : ");
     console.log(rateItem);
     await this.itemService.saveItem(rateItem);
-    console.log("rateItem save 직후");
+    console.log("rateItem save 직후! rateItem 내용 : (직전이랑 같음)");
     console.log(rateItem);
+
+    console.log("Gotter에 새로운 정보를 담아 저장 시작...");
     await this.gotterService.saveGotter(rateGotter);
+    console.log("Gotter에 새로운 정보를 담아 저장 완료...  Gotter 내용: ");
     console.log(rateGotter);
-    console.log("rateGottersave 직후");
     const newAvgRate = rateItem.rate;
     console.log("return 직전");
     return Object.assign({
@@ -566,8 +619,8 @@ export class ItemController {
   });
   }
 
-  //임시로 아이템 추가하는 request
-  @Post() //  
+  
+  @Post()                                                                                                             //  //임시로 아이템 추가하는 request
   async addItem(@Body() body):Promise<void>{
     const item = new Item();
     item.name = body.name;
